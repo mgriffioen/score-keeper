@@ -6,10 +6,11 @@ keypad. Everything is saved, named, and kept in a history you can come back to.
 
 ## What it does
 
-**Set up any game.** Sixteen presets (Rummy, Hearts, Spades, Skull King, Golf,
+**Set up any game.** Seventeen presets (Rummy, Hearts, Spades, Oh Hell, Wizard, Skull King, Golf,
 Cribbage, Farkle, poker night with a buy-in, and more) fill in sensible
 defaults, and every single one stays editable — they're starting points, not
-rules lawyers.
+rules lawyers. Oh Hell and Wizard deal their whole deck out, so their hand
+count is re-derived whenever you add or remove a player.
 
 - **2 to 8 players**, named, reorderable, with a *shuffle seats* button for
   deciding who sits where.

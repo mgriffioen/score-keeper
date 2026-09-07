@@ -15,13 +15,13 @@ function preset(
   name: string,
   blurb: string,
   overrides: Partial<Omit<GameSettings, 'notes'>>,
-  suggestedPlayers?: number,
+  extras: Pick<GamePreset, 'suggestedPlayers' | 'roundsFor'> = {},
 ): GamePreset {
   return {
     id,
     name,
     blurb,
-    suggestedPlayers,
+    ...extras,
     settings: {
       ...base,
       ...overrides,
@@ -29,6 +29,14 @@ function preset(
       stakes: { ...base.stakes, ...overrides.stakes },
     },
   };
+}
+
+/**
+ * Trick-taking games deal out the whole deck, so the hand count is the deck
+ * divided by the table. Both of these count down from a full hand to one.
+ */
+function dealsFromDeck(deckSize: number) {
+  return (playerCount: number) => Math.max(1, Math.floor(deckSize / playerCount));
 }
 
 /**
@@ -49,21 +57,21 @@ export const PRESETS: GamePreset[] = [
     direction: 'high',
     roundLabel: 'Hand',
     endCondition: { type: 'target', rounds: 10, target: 100, comparison: 'atLeast' },
-  }, 2),
+  }, { suggestedPlayers: 2 }),
 
   preset('hearts', 'Hearts', 'Lowest score wins; the game ends at 100.', {
     direction: 'low',
     roundLabel: 'Hand',
     trackDealer: true,
     endCondition: { type: 'target', rounds: 10, target: 100, comparison: 'atLeast' },
-  }, 4),
+  }, { suggestedPlayers: 4 }),
 
   preset('spades', 'Spades', 'Bid and make it. Highest score at 500 wins.', {
     direction: 'high',
     roundLabel: 'Hand',
     trackDealer: true,
     endCondition: { type: 'target', rounds: 10, target: 500, comparison: 'atLeast' },
-  }, 4),
+  }, { suggestedPlayers: 4 }),
 
   preset('skull-king', 'Skull King', 'Ten hands, bonuses and penalties both count.', {
     direction: 'high',
@@ -72,12 +80,33 @@ export const PRESETS: GamePreset[] = [
     endCondition: { type: 'rounds', rounds: 10, target: 500, comparison: 'atLeast' },
   }),
 
-  preset('wizard', 'Wizard / Oh Hell', 'Fixed number of hands — adjust to suit your deal.', {
-    direction: 'high',
-    roundLabel: 'Hand',
-    trackDealer: true,
-    endCondition: { type: 'rounds', rounds: 10, target: 500, comparison: 'atLeast' },
-  }),
+  preset(
+    'oh-hell',
+    'Oh Hell',
+    'Bid your tricks exactly. A 52-card deck sets the hand count for your table.',
+    {
+      direction: 'high',
+      roundLabel: 'Hand',
+      trackDealer: true,
+      endCondition: { type: 'rounds', rounds: 13, target: 500, comparison: 'atLeast' },
+    },
+    // A standard 52-card deck dealt out evenly: 13 hands for four players,
+    // 8 for six. Groups that cap the opening hand lower can just edit it.
+    { roundsFor: dealsFromDeck(52) },
+  ),
+
+  preset(
+    'wizard',
+    'Wizard',
+    'Bid your tricks exactly; wizards and jesters bend the trumps. Its own 60-card deck sets the hand count.',
+    {
+      direction: 'high',
+      roundLabel: 'Hand',
+      trackDealer: true,
+      endCondition: { type: 'rounds', rounds: 15, target: 500, comparison: 'atLeast' },
+    },
+    { roundsFor: dealsFromDeck(60) },
+  ),
 
   preset('golf', 'Golf', 'Nine holes, lowest total takes it.', {
     direction: 'low',
@@ -110,14 +139,14 @@ export const PRESETS: GamePreset[] = [
     direction: 'high',
     roundLabel: 'Hand',
     endCondition: { type: 'target', rounds: 10, target: 5000, comparison: 'atLeast' },
-  }, 2),
+  }, { suggestedPlayers: 2 }),
 
   preset('cribbage', 'Cribbage', 'First to peg out at 121.', {
     direction: 'high',
     roundLabel: 'Hand',
     trackDealer: true,
     endCondition: { type: 'target', rounds: 10, target: 121, comparison: 'atLeast' },
-  }, 2),
+  }, { suggestedPlayers: 2 }),
 
   preset('farkle', 'Farkle', 'Dice, greed, and a 10,000 point finish line.', {
     direction: 'high',

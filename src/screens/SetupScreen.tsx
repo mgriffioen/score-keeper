@@ -8,7 +8,7 @@ import {
   suggestName,
 } from '../lib/session';
 import { upsertSession } from '../lib/storage';
-import type { GameSettings, Player } from '../types';
+import type { GamePreset, GameSettings, Player } from '../types';
 import { PlayersForm } from '../components/PlayersForm';
 import { RulesForm } from '../components/RulesForm';
 import { BarButton, Field, TopBar } from '../components/ui';
@@ -26,20 +26,27 @@ export function SetupScreen(props: { onCancel: () => void; onStarted: (id: strin
 
   const choosePreset = (id: string) => {
     const chosen = findPreset(id);
-    setPresetId(id);
-    setSettings(settingsFromPreset(id, settings.notes));
-    if (!nameTouched) setName(suggestName(id));
     // Only resize the table if nobody has edited it by hand yet.
-    if (!playersTouched && chosen.suggestedPlayers) {
-      setPlayers(resize(players, chosen.suggestedPlayers));
+    const nextPlayers =
+      !playersTouched && chosen.suggestedPlayers
+        ? resize(players, chosen.suggestedPlayers)
+        : players;
+    setPresetId(id);
+    if (nextPlayers !== players) {
+      setPlayers(nextPlayers);
       setFirstDealerIndex(0);
     }
+    setSettings(
+      withDerivedRounds(settingsFromPreset(id, settings.notes), chosen, nextPlayers.length),
+    );
+    if (!nameTouched) setName(suggestName(id));
   };
 
   const updatePlayers = (next: Player[]) => {
     setPlayersTouched(true);
     setPlayers(next);
     if (firstDealerIndex >= next.length) setFirstDealerIndex(0);
+    setSettings((current) => withDerivedRounds(current, preset, next.length));
   };
 
   const start = () => {
@@ -122,6 +129,23 @@ export function SetupScreen(props: { onCancel: () => void; onStarted: (id: strin
       </div>
     </>
   );
+}
+
+/**
+ * Oh Hell and Wizard deal the whole deck out, so the number of hands is a
+ * consequence of how many people are playing. Re-derive it whenever the table
+ * changes — but never overwrite a round count the game no longer uses.
+ */
+function withDerivedRounds(
+  settings: GameSettings,
+  preset: GamePreset,
+  playerCount: number,
+): GameSettings {
+  if (!preset.roundsFor || settings.endCondition.type !== 'rounds') return settings;
+  return {
+    ...settings,
+    endCondition: { ...settings.endCondition, rounds: preset.roundsFor(playerCount) },
+  };
 }
 
 /** Grow or shrink the table to `count`, keeping any names already typed. */

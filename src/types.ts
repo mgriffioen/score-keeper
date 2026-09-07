@@ -82,6 +82,12 @@ export interface GamePreset {
   blurb: string;
   suggestedPlayers?: number;
   settings: Omit<GameSettings, 'notes'>;
+  /**
+   * Games where the deal — and so the number of rounds — falls out of how
+   * many people are playing. Setup re-derives the round count whenever the
+   * table changes size.
+   */
+  roundsFor?: (playerCount: number) => number;
 }
 
 export interface Standing {
