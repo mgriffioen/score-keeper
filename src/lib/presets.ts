@@ -1,0 +1,146 @@
+import type { GamePreset, GameSettings } from '../types';
+
+const base: Omit<GameSettings, 'notes'> = {
+  direction: 'high',
+  startingScore: 0,
+  allowNegative: true,
+  roundLabel: 'Round',
+  trackDealer: false,
+  endCondition: { type: 'manual', rounds: 10, target: 500, comparison: 'atLeast' },
+  stakes: { enabled: false, currency: '$', ante: 5, perRound: 0 },
+};
+
+function preset(
+  id: string,
+  name: string,
+  blurb: string,
+  overrides: Partial<Omit<GameSettings, 'notes'>>,
+  suggestedPlayers?: number,
+): GamePreset {
+  return {
+    id,
+    name,
+    blurb,
+    suggestedPlayers,
+    settings: {
+      ...base,
+      ...overrides,
+      endCondition: { ...base.endCondition, ...overrides.endCondition },
+      stakes: { ...base.stakes, ...overrides.stakes },
+    },
+  };
+}
+
+/**
+ * Starting points, not rules lawyers. Every value a preset sets is editable on
+ * the setup screen, and house rules differ everywhere.
+ */
+export const PRESETS: GamePreset[] = [
+  preset('custom', 'Custom game', 'Blank slate — set every rule yourself.', {}),
+
+  preset('rummy', 'Rummy', 'Highest score wins, first to 500 ends it.', {
+    direction: 'high',
+    roundLabel: 'Hand',
+    trackDealer: true,
+    endCondition: { type: 'target', rounds: 10, target: 500, comparison: 'atLeast' },
+  }),
+
+  preset('gin-rummy', 'Gin Rummy', 'Head-to-head, race to 100.', {
+    direction: 'high',
+    roundLabel: 'Hand',
+    endCondition: { type: 'target', rounds: 10, target: 100, comparison: 'atLeast' },
+  }, 2),
+
+  preset('hearts', 'Hearts', 'Lowest score wins; the game ends at 100.', {
+    direction: 'low',
+    roundLabel: 'Hand',
+    trackDealer: true,
+    endCondition: { type: 'target', rounds: 10, target: 100, comparison: 'atLeast' },
+  }, 4),
+
+  preset('spades', 'Spades', 'Bid and make it. Highest score at 500 wins.', {
+    direction: 'high',
+    roundLabel: 'Hand',
+    trackDealer: true,
+    endCondition: { type: 'target', rounds: 10, target: 500, comparison: 'atLeast' },
+  }, 4),
+
+  preset('skull-king', 'Skull King', 'Ten hands, bonuses and penalties both count.', {
+    direction: 'high',
+    roundLabel: 'Hand',
+    trackDealer: true,
+    endCondition: { type: 'rounds', rounds: 10, target: 500, comparison: 'atLeast' },
+  }),
+
+  preset('wizard', 'Wizard / Oh Hell', 'Fixed number of hands — adjust to suit your deal.', {
+    direction: 'high',
+    roundLabel: 'Hand',
+    trackDealer: true,
+    endCondition: { type: 'rounds', rounds: 10, target: 500, comparison: 'atLeast' },
+  }),
+
+  preset('golf', 'Golf', 'Nine holes, lowest total takes it.', {
+    direction: 'low',
+    roundLabel: 'Hole',
+    trackDealer: true,
+    endCondition: { type: 'rounds', rounds: 9, target: 100, comparison: 'atLeast' },
+  }),
+
+  preset('five-crowns', 'Five Crowns', 'Eleven deals, threes through kings, lowest wins.', {
+    direction: 'low',
+    roundLabel: 'Deal',
+    trackDealer: true,
+    endCondition: { type: 'rounds', rounds: 11, target: 100, comparison: 'atLeast' },
+  }),
+
+  preset('phase-10', 'Phase 10', 'Lowest score wins once someone finishes phase ten.', {
+    direction: 'low',
+    roundLabel: 'Hand',
+    trackDealer: true,
+    endCondition: { type: 'manual', rounds: 10, target: 100, comparison: 'atLeast' },
+  }),
+
+  preset('uno', 'Uno', 'Score the cards left in hand; first to 500 wins.', {
+    direction: 'high',
+    roundLabel: 'Hand',
+    endCondition: { type: 'target', rounds: 10, target: 500, comparison: 'atLeast' },
+  }),
+
+  preset('canasta', 'Canasta', 'Partnerships to 5000 — add each side as a player.', {
+    direction: 'high',
+    roundLabel: 'Hand',
+    endCondition: { type: 'target', rounds: 10, target: 5000, comparison: 'atLeast' },
+  }, 2),
+
+  preset('cribbage', 'Cribbage', 'First to peg out at 121.', {
+    direction: 'high',
+    roundLabel: 'Hand',
+    trackDealer: true,
+    endCondition: { type: 'target', rounds: 10, target: 121, comparison: 'atLeast' },
+  }, 2),
+
+  preset('farkle', 'Farkle', 'Dice, greed, and a 10,000 point finish line.', {
+    direction: 'high',
+    roundLabel: 'Turn',
+    endCondition: { type: 'target', rounds: 10, target: 10000, comparison: 'atLeast' },
+  }),
+
+  preset('countdown', 'Countdown', 'Everyone starts on 501 and races down to zero.', {
+    direction: 'low',
+    startingScore: 501,
+    roundLabel: 'Leg',
+    endCondition: { type: 'target', rounds: 10, target: 0, comparison: 'atMost' },
+  }),
+
+  preset('poker-night', 'Poker night', 'Chip counts with a buy-in and a pot.', {
+    direction: 'high',
+    roundLabel: 'Hand',
+    trackDealer: true,
+    endCondition: { type: 'manual', rounds: 10, target: 500, comparison: 'atLeast' },
+    stakes: { enabled: true, currency: '$', ante: 20, perRound: 0 },
+  }),
+];
+
+export function findPreset(id: string): GamePreset {
+  return PRESETS.find((entry) => entry.id === id) ?? PRESETS[0];
+}

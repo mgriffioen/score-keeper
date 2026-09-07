@@ -1,0 +1,247 @@
+import type { EndConditionType, GameSettings, Player, TargetComparison } from '../types';
+import { Field, Segmented, Stepper, SwitchRow, clamp } from './ui';
+
+const ROUND_LABELS = ['Round', 'Hand', 'Deal', 'Turn', 'Hole', 'Leg', 'Frame'];
+
+/**
+ * The whole rule set for a game. Shared by new-game setup and the in-game
+ * settings sheet, so anything you can choose up front you can also change
+ * halfway through a game night.
+ */
+export function RulesForm(props: {
+  settings: GameSettings;
+  players: Player[];
+  firstDealerIndex: number;
+  onChange: (settings: GameSettings) => void;
+  onFirstDealerChange: (index: number) => void;
+}) {
+  const { settings } = props;
+  const patch = (changes: Partial<GameSettings>) => props.onChange({ ...settings, ...changes });
+  const patchEnd = (changes: Partial<GameSettings['endCondition']>) =>
+    patch({ endCondition: { ...settings.endCondition, ...changes } });
+  const patchStakes = (changes: Partial<GameSettings['stakes']>) =>
+    patch({ stakes: { ...settings.stakes, ...changes } });
+
+  const unit = settings.roundLabel.toLowerCase();
+
+  return (
+    <>
+      <section className="card">
+        <div className="section-title">Scoring</div>
+
+        <Field label="Who wins">
+          <Segmented
+            ariaLabel="Who wins"
+            value={settings.direction}
+            onChange={(direction) => patch({ direction })}
+            options={[
+              { value: 'high', label: 'Highest score' },
+              { value: 'low', label: 'Lowest score' },
+            ]}
+          />
+        </Field>
+
+        <Field label="Everyone starts on" hint="Usually 0. Set it higher for countdown games.">
+          <Stepper
+            ariaLabel="Starting score"
+            value={settings.startingScore}
+            onChange={(startingScore) => patch({ startingScore })}
+            min={-100000}
+            max={100000}
+            step={stepFor(settings.startingScore)}
+          />
+        </Field>
+
+        <Field label="What one entry is called">
+          <input
+            className="input"
+            type="text"
+            aria-label="What one entry is called"
+            value={settings.roundLabel}
+            maxLength={16}
+            onChange={(event) => patch({ roundLabel: event.target.value })}
+          />
+        </Field>
+        <div className="chiprow" style={{ marginTop: 8 }}>
+          {ROUND_LABELS.map((label) => (
+            <button
+              key={label}
+              type="button"
+              className="chip"
+              aria-pressed={settings.roundLabel === label}
+              onClick={() => patch({ roundLabel: label })}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="card">
+        <div className="section-title">How it ends</div>
+        <Segmented
+          ariaLabel="How the game ends"
+          value={settings.endCondition.type}
+          onChange={(type: EndConditionType) => patchEnd({ type })}
+          options={[
+            { value: 'manual', label: 'We decide' },
+            { value: 'rounds', label: 'Set count' },
+            { value: 'target', label: 'Target' },
+          ]}
+        />
+
+        {settings.endCondition.type === 'manual' ? (
+          <p className="hint">
+            Play as long as you like — end the game yourself from the game menu.
+          </p>
+        ) : null}
+
+        {settings.endCondition.type === 'rounds' ? (
+          <div style={{ marginTop: 12 }}>
+            <Field label={`Number of ${unit}s`}>
+              <Stepper
+                ariaLabel="Number of rounds"
+                value={settings.endCondition.rounds}
+                onChange={(rounds) => patchEnd({ rounds: clamp(rounds, 1, 200) })}
+                min={1}
+                max={200}
+              />
+            </Field>
+          </div>
+        ) : null}
+
+        {settings.endCondition.type === 'target' ? (
+          <div style={{ marginTop: 12 }}>
+            <Field label="The game ends when a player">
+              <Segmented
+                ariaLabel="Target comparison"
+                value={settings.endCondition.comparison}
+                onChange={(comparison: TargetComparison) => patchEnd({ comparison })}
+                options={[
+                  { value: 'atLeast', label: 'Reaches' },
+                  { value: 'atMost', label: 'Falls to' },
+                ]}
+              />
+            </Field>
+            <Field label="Target score">
+              <Stepper
+                ariaLabel="Target score"
+                value={settings.endCondition.target}
+                onChange={(target) => patchEnd({ target })}
+                min={-100000}
+                max={1000000}
+                step={stepFor(settings.endCondition.target)}
+              />
+            </Field>
+            <p className="hint">
+              {settings.direction === 'high'
+                ? 'Highest total at that point wins.'
+                : 'Lowest total at that point wins — handy for games where hitting the target knocks you out.'}
+            </p>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="card">
+        <div className="section-title">Pot</div>
+        <SwitchRow
+          title="Buy-in and pot"
+          sub="Track what everyone put in and who takes it."
+          checked={settings.stakes.enabled}
+          onChange={(enabled) => patchStakes({ enabled })}
+        />
+        {settings.stakes.enabled ? (
+          <div style={{ marginTop: 12 }}>
+            <Field label="Currency symbol">
+              <input
+                className="input"
+                type="text"
+                aria-label="Currency symbol"
+                maxLength={3}
+                value={settings.stakes.currency}
+                onChange={(event) => patchStakes({ currency: event.target.value })}
+              />
+            </Field>
+            <Field label="Buy-in per player">
+              <Stepper
+                ariaLabel="Buy-in per player"
+                value={settings.stakes.ante}
+                onChange={(ante) => patchStakes({ ante })}
+                min={0}
+                max={100000}
+              />
+            </Field>
+            <Field
+              label={`Added to the pot each ${unit}, per player`}
+              hint="Leave at 0 if the buy-in is the whole pot."
+            >
+              <Stepper
+                ariaLabel="Per round contribution"
+                value={settings.stakes.perRound}
+                onChange={(perRound) => patchStakes({ perRound })}
+                min={0}
+                max={100000}
+              />
+            </Field>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="card">
+        <div className="section-title">Table</div>
+        <SwitchRow
+          title="Allow negative scores"
+          sub={`Show the ± key when entering a ${unit}.`}
+          checked={settings.allowNegative}
+          onChange={(allowNegative) => patch({ allowNegative })}
+        />
+        <SwitchRow
+          title="Track the deal"
+          sub="Show whose turn it is to deal and pass it along each round."
+          checked={settings.trackDealer}
+          onChange={(trackDealer) => patch({ trackDealer })}
+        />
+        {settings.trackDealer && props.players.length > 0 ? (
+          <div style={{ marginTop: 10 }}>
+            <div className="label" style={{ marginBottom: 8 }}>
+              First dealer
+            </div>
+            <div className="chiprow">
+              {props.players.map((player, index) => (
+                <button
+                  key={player.id}
+                  type="button"
+                  className="chip"
+                  aria-pressed={props.firstDealerIndex === index}
+                  onClick={() => props.onFirstDealerChange(index)}
+                >
+                  {player.name || `Seat ${index + 1}`}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="card">
+        <div className="section-title">Notes</div>
+        <textarea
+          className="input"
+          aria-label="Notes"
+          placeholder="House rules, who brought the snacks, anything you want to remember."
+          value={settings.notes}
+          onChange={(event) => patch({ notes: event.target.value })}
+        />
+      </section>
+    </>
+  );
+}
+
+/** Bigger numbers deserve bigger nudges from the +/- buttons. */
+function stepFor(value: number): number {
+  const magnitude = Math.abs(value);
+  if (magnitude >= 5000) return 500;
+  if (magnitude >= 500) return 50;
+  if (magnitude >= 100) return 10;
+  return 1;
+}
