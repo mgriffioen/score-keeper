@@ -67,6 +67,39 @@ export interface Deal {
   maxCards: number;
 }
 
+/** One rung of a blinds ladder, or a break in it. */
+export interface BlindLevel {
+  smallBlind: number;
+  bigBlind: number;
+  ante: number;
+  /** How long this level lasts. */
+  minutes: number;
+  /** A break: no blinds, just a clock counting down to the next level. */
+  isBreak: boolean;
+}
+
+export interface Blinds {
+  enabled: boolean;
+  levels: BlindLevel[];
+  /** Chime and buzz when a level runs out. */
+  alert: boolean;
+}
+
+/**
+ * Where the blinds clock has got to. Deliberately three plain numbers rather
+ * than a running counter: everything is derived from the wall clock, so the
+ * timer stays correct through a locked phone, a backgrounded tab or a reload,
+ * and nothing has to be written on every tick.
+ */
+export interface BlindClock {
+  /** Index of the level the countdown was last known to be on. */
+  level: number;
+  /** When the countdown was last resumed. Null means paused. */
+  runningSince: number | null;
+  /** Time already spent on `level` before the last pause. */
+  elapsedMs: number;
+}
+
 export interface GameSettings {
   direction: Direction;
   /** Score every player starts on (0 for most games, 501 for countdowns). */
@@ -81,6 +114,7 @@ export interface GameSettings {
   stakes: Stakes;
   bidScoring: BidScoring;
   deal: Deal;
+  blinds: Blinds;
   notes: string;
 }
 
@@ -117,6 +151,8 @@ export interface GameSession {
   firstDealerIndex: number;
   /** Frozen at the moment the game was ended. */
   winnerIds?: string[];
+  /** Blinds timer position, when the game runs one. */
+  clock?: BlindClock;
 }
 
 /** A named bundle of default settings for a well-known game. */

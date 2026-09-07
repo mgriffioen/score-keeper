@@ -1087,3 +1087,136 @@ textarea.input {
   font-weight: 600;
   color: var(--muted);
 }
+
+/* ---------------------------------------------------------- blinds clock -- */
+.clock {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elev);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.clock--break {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.clock--urgent {
+  border-color: var(--danger);
+}
+.clock--done {
+  border-color: var(--line-strong);
+}
+
+.clock__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.clock__level {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.clock__of {
+  font-weight: 600;
+  opacity: 0.75;
+}
+.clock__blinds {
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.clock__time {
+  font-family: var(--numeric);
+  font-size: 56px;
+  line-height: 1;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  text-align: center;
+  padding: 2px 0 4px;
+}
+.clock--urgent .clock__time {
+  color: var(--danger);
+}
+.clock--done .clock__time {
+  font-size: 40px;
+  color: var(--muted);
+}
+
+.clock__next {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.clock__controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.clock__controls .btn {
+  padding: 0 14px;
+  font-size: 18px;
+}
+
+/* Editing the ladder: one compact row per level. */
+.levelrow {
+  display: grid;
+  grid-template-columns: 20px repeat(4, 1fr) 36px;
+  align-items: center;
+  gap: 6px;
+}
+.levelrow + .levelrow {
+  margin-top: 8px;
+}
+.levelrow__index {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+}
+.levelrow .input {
+  min-height: 42px;
+  padding: 0 6px;
+  text-align: center;
+  font-size: 16px;
+}
+.levelrow__break {
+  grid-column: 2 / 5;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  align-self: center;
+}
+.levelrow__remove {
+  width: 36px;
+  height: 42px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+}
+.levelrow__remove:active {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.levelhead {
+  display: grid;
+  grid-template-columns: 20px repeat(4, 1fr) 36px;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+}

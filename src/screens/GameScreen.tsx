@@ -23,6 +23,7 @@ import {
 } from '../lib/scoring';
 import { formatMoney, formatSigned, joinParts, pluralize } from '../lib/format';
 import { cardsInRound } from '../lib/deal';
+import { BlindsClock } from '../components/BlindsClock';
 import { PlayersForm } from '../components/PlayersForm';
 import { RulesForm } from '../components/RulesForm';
 import { ScoreEntrySheet, type DraftScores, type EntryResult } from '../components/ScoreEntrySheet';
@@ -161,6 +162,14 @@ export function GameScreen(props: {
               </button>
             </div>
           </section>
+        ) : null}
+
+        {session.settings.blinds.enabled && !done ? (
+          <BlindsClock
+            blinds={session.settings.blinds}
+            clock={session.clock}
+            onChange={(clock) => save({ ...session, clock })}
+          />
         ) : null}
 
         <section className="card card--flush">

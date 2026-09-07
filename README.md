@@ -22,12 +22,36 @@ count is re-derived whenever you add or remove a player.
   it off and keep playing.
 - **A pot:** a buy-in per player, optionally topped up each round, totalled and
   shown against the winner.
+- **Blinds on a clock**, for poker nights — see below.
 - **Round naming** — Round, Hand, Deal, Turn, Hole, Leg — used everywhere in
   the interface.
 - **Negative scores** on or off, and **dealer tracking** that passes the deal
   round the table.
 - **Bidding** and **the deal**, for trick-taking games — see below.
 - **Notes** for house rules.
+
+### Blinds on a clock
+
+Switch **Blinds** on and the game screen gains a countdown at the top: the level
+you're on, what the blinds are, what's next, and how long until they go up. It
+walks up the ladder on its own and chimes when it does.
+
+Poker night arrives with a nine-rung home-game ladder — 25/50 up to 500/1000,
+fifteen minutes each, with a ten-minute break in the middle. Every number is
+editable: small blind, big blind, ante and length per level, plus add, remove
+and reorder. **+ Add level** doubles the one before it, and breaks are their own
+kind of rung (a clock with no blinds, not counted in "level 3 of 8").
+
+Controls are ‹ and › to move a level, ↺ to put the current one back to full, and
+one big Pause/Resume.
+
+**The clock is wall-clock arithmetic, not a ticking counter.** All that is
+stored is which level you were on, when it was last resumed, and how much of
+the level had already gone. Everything else is derived from the current time,
+which means it stays right through a locked phone, a backgrounded tab, or a
+reload — come back forty minutes later and it is on the level it should be on,
+not the one you left. Nothing is written to storage on a tick, only when
+someone actually presses something.
 
 ### Called-trick games
 
@@ -174,6 +198,8 @@ src/
     scoring.ts          totals, standings, end conditions, pot, dealer (pure)
     scoring.test.ts     tests for all of the above
     session.ts          creating and mutating a session
+    blinds.ts           the blinds ladder and the wall-clock countdown
+    blinds.test.ts      tests for the clock, including sleeping through levels
     deal.ts             hand sizes round by round, and how many rounds
     deal.test.ts        tests for every deal pattern
     presets.ts          the built-in games
@@ -182,6 +208,7 @@ src/
     hydrate.test.ts     tests that games from older builds still open
     router.ts           hash routing, so the back button works
   components/
+    BlindsClock.tsx     the countdown, its controls and its chime
     ScoreEntrySheet.tsx the keypad
     RulesForm.tsx       the rule set, shared by setup and in-game settings
     PlayersForm.tsx     the table

@@ -1,4 +1,5 @@
 import type { Deal, DealPattern, GamePreset, GameSettings } from '../types';
+import { defaultLevels } from './blinds';
 
 const base: Omit<GameSettings, 'notes'> = {
   direction: 'high',
@@ -16,6 +17,7 @@ const base: Omit<GameSettings, 'notes'> = {
     penaltyPerTrick: 10,
   },
   deal: { pattern: 'fixed', maxCards: 10 },
+  blinds: { enabled: false, levels: [], alert: true },
 };
 
 function preset(
@@ -37,6 +39,7 @@ function preset(
       stakes: { ...base.stakes, ...overrides.stakes },
       bidScoring: { ...base.bidScoring, ...overrides.bidScoring },
       deal: { ...base.deal, ...overrides.deal },
+      blinds: { ...base.blinds, ...overrides.blinds },
     },
   };
 }
@@ -194,12 +197,13 @@ export const PRESETS: GamePreset[] = [
     endCondition: { type: 'target', rounds: 10, target: 0, comparison: 'atMost' },
   }),
 
-  preset('poker-night', 'Poker night', 'Chip counts with a buy-in and a pot.', {
+  preset('poker-night', 'Poker night', 'Chip counts, a buy-in, and blinds on a clock.', {
     direction: 'high',
     roundLabel: 'Hand',
     trackDealer: true,
     endCondition: { type: 'manual', rounds: 10, target: 500, comparison: 'atLeast' },
     stakes: { enabled: true, currency: '$', ante: 20, perRound: 0 },
+    blinds: { enabled: true, levels: defaultLevels(), alert: true },
   }),
 ];
 

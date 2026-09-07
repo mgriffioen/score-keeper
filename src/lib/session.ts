@@ -33,6 +33,10 @@ export function settingsFromPreset(presetId: string, notes = ''): GameSettings {
     stakes: { ...preset.settings.stakes },
     bidScoring: { ...preset.settings.bidScoring },
     deal: { ...preset.settings.deal },
+    blinds: {
+      ...preset.settings.blinds,
+      levels: preset.settings.blinds.levels.map((level) => ({ ...level })),
+    },
     notes,
   };
 }
@@ -88,6 +92,7 @@ export function hydrateSession(session: GameSession): GameSession {
       stakes: { ...fallback.stakes, ...stored.stakes },
       bidScoring: { ...fallback.bidScoring, ...stored.bidScoring },
       deal: { ...fallback.deal, ...stored.deal },
+      blinds: { ...fallback.blinds, ...stored.blinds, levels: stored.blinds?.levels ?? [] },
     },
   };
 }
@@ -162,6 +167,10 @@ export function rematch(session: GameSession): GameSession {
       stakes: { ...session.settings.stakes },
       bidScoring: { ...session.settings.bidScoring },
       deal: { ...session.settings.deal },
+      blinds: {
+        ...session.settings.blinds,
+        levels: session.settings.blinds.levels.map((level) => ({ ...level })),
+      },
     },
     // Pass the deal along to the next player, the way a real table would.
     firstDealerIndex:

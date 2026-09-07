@@ -7,6 +7,8 @@ import type {
   TargetComparison,
 } from '../types';
 import { dealRoundCount, describeDeal } from '../lib/deal';
+import { defaultLevels, nextLevelAfter } from '../lib/blinds';
+import { useState } from 'react';
 import { Field, Segmented, Stepper, SwitchRow, clamp } from './ui';
 
 const ROUND_LABELS = ['Round', 'Hand', 'Deal', 'Turn', 'Hole', 'Leg', 'Frame'];
@@ -55,6 +57,15 @@ export function RulesForm(props: {
   };
 
   const dealtRounds = dealRoundCount(settings.deal);
+
+  const patchBlinds = (changes: Partial<GameSettings['blinds']>) =>
+    patch({ blinds: { ...settings.blinds, ...changes } });
+  const patchLevel = (index: number, changes: Partial<GameSettings['blinds']['levels'][number]>) =>
+    patchBlinds({
+      levels: settings.blinds.levels.map((level, i) =>
+        i === index ? { ...level, ...changes } : level,
+      ),
+    });
 
   // A worked example beats explaining the formula in prose.
   const example = {
@@ -335,6 +346,122 @@ export function RulesForm(props: {
       </section>
 
       <section className="card">
+        <div className="section-title">Blinds</div>
+        <SwitchRow
+          title="Blinds on a clock"
+          sub="A countdown that walks up the ladder on its own."
+          checked={settings.blinds.enabled}
+          onChange={(enabled) =>
+            patchBlinds({
+              enabled,
+              // Switching it on with nothing set up is a dead timer.
+              levels: enabled && settings.blinds.levels.length === 0
+                ? defaultLevels()
+                : settings.blinds.levels,
+            })
+          }
+        />
+        {settings.blinds.enabled ? (
+          <div style={{ marginTop: 12 }}>
+            <SwitchRow
+              title="Chime on a new level"
+              sub="Sounds and buzzes when the clock runs out."
+              checked={settings.blinds.alert}
+              onChange={(alert) => patchBlinds({ alert })}
+            />
+            <div className="levelhead" style={{ marginTop: 12 }} aria-hidden="true">
+              <span />
+              <span>Small</span>
+              <span>Big</span>
+              <span>Ante</span>
+              <span>Mins</span>
+              <span />
+            </div>
+            {settings.blinds.levels.map((level, index) => (
+              <div className="levelrow" key={index}>
+                <span className="levelrow__index">{index + 1}</span>
+                {level.isBreak ? (
+                  <span className="levelrow__break">Break</span>
+                ) : (
+                  <>
+                    <NumberCell
+                      label={`Small blind, level ${index + 1}`}
+                      value={level.smallBlind}
+                      onChange={(smallBlind) => patchLevel(index, { smallBlind })}
+                    />
+                    <NumberCell
+                      label={`Big blind, level ${index + 1}`}
+                      value={level.bigBlind}
+                      onChange={(bigBlind) => patchLevel(index, { bigBlind })}
+                    />
+                    <NumberCell
+                      label={`Ante, level ${index + 1}`}
+                      value={level.ante}
+                      onChange={(ante) => patchLevel(index, { ante })}
+                    />
+                  </>
+                )}
+                <NumberCell
+                  label={`Minutes, level ${index + 1}`}
+                  value={level.minutes}
+                  onChange={(minutes) => patchLevel(index, { minutes: Math.max(1, minutes) })}
+                />
+                <button
+                  type="button"
+                  className="levelrow__remove"
+                  aria-label={`Remove level ${index + 1}`}
+                  onClick={() =>
+                    patchBlinds({
+                      levels: settings.blinds.levels.filter((_, i) => i !== index),
+                    })
+                  }
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <div className="chiprow" style={{ marginTop: 12 }}>
+              <button
+                type="button"
+                className="chip"
+                onClick={() =>
+                  patchBlinds({
+                    levels: [...settings.blinds.levels, nextLevelAfter(settings.blinds.levels)],
+                  })
+                }
+              >
+                + Add level
+              </button>
+              <button
+                type="button"
+                className="chip"
+                onClick={() =>
+                  patchBlinds({
+                    levels: [
+                      ...settings.blinds.levels,
+                      { smallBlind: 0, bigBlind: 0, ante: 0, minutes: 10, isBreak: true },
+                    ],
+                  })
+                }
+              >
+                + Add break
+              </button>
+              <button
+                type="button"
+                className="chip"
+                onClick={() => patchBlinds({ levels: defaultLevels() })}
+              >
+                ↺ Reset ladder
+              </button>
+            </div>
+            <p className="hint">
+              A new level doubles the one before it. Edit any number to suit the table.
+            </p>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="card">
         <div className="section-title">Table</div>
         {settings.bidScoring.enabled ? null : (
           <SwitchRow
@@ -383,6 +510,27 @@ export function RulesForm(props: {
         />
       </section>
     </>
+  );
+}
+
+/** A bare number box for the blinds grid, where a full stepper will not fit. */
+function NumberCell(props: { label: string; value: number; onChange: (value: number) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <input
+      className="input tabular"
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      aria-label={props.label}
+      value={draft ?? String(props.value)}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={(event) => {
+        const parsed = Number.parseInt(event.target.value, 10);
+        setDraft(null);
+        if (!Number.isNaN(parsed)) props.onChange(Math.max(0, parsed));
+      }}
+    />
   );
 }
 
