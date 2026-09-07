@@ -28,9 +28,15 @@ jobs:
       - name: Build
         # Project sites are served from /<repo>/, so assets need that prefix.
         run: BASE_PATH="/${GITHUB_REPOSITORY#*/}/" npm run build
-      # Pages must already be enabled with GitHub Actions as the source:
-      # Settings -> Pages -> Build and deployment -> Source. The workflow
-      # token cannot create the site itself (that needs repo admin).
+      # Pages must already be set to "GitHub Actions" as its source, under
+      # Settings -> Pages -> Build and deployment -> Source. The workflow token
+      # cannot set that itself (it needs repo admin).
+      #
+      # If the source is "Deploy from a branch" instead, this job still passes
+      # but the site is wrong: GitHub runs Jekyll over the repo root in a
+      # parallel "pages build and deployment" run and publishes the source
+      # tree, so visitors get the dev index.html and a 404 on /src/main.tsx.
+      # A blank page plus that 404 means the source setting, not the build.
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

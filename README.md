@@ -80,12 +80,35 @@ Add it to a phone's home screen and it runs full-screen as a standalone app
 ### Deploying
 
 `.github/workflows/deploy.yml` publishes `dist/` to GitHub Pages on every push
-to `main`, once Pages is enabled for the repo under **Settings → Pages → Build
-and deployment → GitHub Actions**. It sets `BASE_PATH` to `/<repo>/` so asset
-URLs resolve correctly on a project site.
+to `main`. It sets `BASE_PATH` to `/<repo>/` so asset URLs resolve correctly on
+a project site.
+
+**Pages must be set to "GitHub Actions" as its source** — under **Settings →
+Pages → Build and deployment → Source**. This is the one piece of setup that
+is not in the repo, and getting it wrong fails in a way that looks like a bug
+in the app:
+
+> **Symptom:** the deployed page is blank, and the console shows
+> `GET .../src/main.tsx net::ERR_ABORTED 404 (Not Found)`.
+>
+> **Cause:** Source is set to *Deploy from a branch* instead of *GitHub
+> Actions*. That runs GitHub's Jekyll builder over the repository root and
+> publishes the source tree verbatim — including the development `index.html`,
+> whose `<script src="/src/main.tsx">` is TypeScript that only a bundler can
+> load. The built `index.html` in `dist/` points at `/<repo>/assets/*.js`
+> instead; that is what should be served.
+>
+> Both pipelines deploy if the source is a branch, and they race — so the
+> workflow can report success while Jekyll's output is what is actually live.
+> The tell is a second workflow run named **"pages build and deployment"**
+> alongside this one. Once the source is *GitHub Actions*, those stop.
+
+The workflow token cannot set this itself: creating or reconfiguring a Pages
+site needs repository admin, which `GITHUB_TOKEN` does not have whatever it
+declares under `permissions:`.
 
 Any static host works just as well — the build is plain files with no server
-behind it.
+behind it. Serve `dist/` at the path you built it for.
 
 ## Layout
 
@@ -97,6 +120,7 @@ src/
     scoring.test.ts     tests for all of the above
     session.ts          creating and mutating a session
     presets.ts          the built-in games
+    presets.test.ts     tests for the presets and their derived round counts
     storage.ts          localStorage persistence, export and import
     router.ts           hash routing, so the back button works
   components/
