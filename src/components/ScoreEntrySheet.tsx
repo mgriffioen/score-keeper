@@ -36,6 +36,8 @@ export function ScoreEntrySheet(props: {
   allowNegative: boolean;
   /** When enabled, the sheet collects bids and tricks instead of raw points. */
   bidScoring: BidScoring;
+  /** Tricks going in this round, when the deal is tracked. */
+  cardsThisRound?: number | null;
   saveLabel: string;
   onSave: (result: EntryResult) => void;
   onCancel: () => void;
@@ -197,6 +199,7 @@ export function ScoreEntrySheet(props: {
 
   const calledTotal = sumOf(players, (player) => valueAt(player.id, 'bid'));
   const wonTotal = sumOf(players, (player) => valueAt(player.id, 'tricks'));
+  const available = props.cardsThisRound ?? null;
 
   const cell = (player: Player, field: Field) => {
     const cellKey = key(player.id, field);
@@ -298,7 +301,9 @@ export function ScoreEntrySheet(props: {
 
         {bidMode ? (
           <p className="entrysum">
-            {calledTotal} called{wonTotal > 0 ? ` · ${wonTotal} won` : ''}
+            {calledTotal} called
+            {available !== null ? ` of ${available} · ${describeGap(calledTotal - available)}` : ''}
+            {wonTotal > 0 ? ` · ${wonTotal} won` : ''}
           </p>
         ) : null}
 
@@ -337,6 +342,15 @@ function key(playerId: string, field: Field): string {
 
 function show(value: number | null | undefined): string {
   return value === null || value === undefined ? '' : String(value);
+}
+
+/**
+ * Whether the table has called more tricks than exist. Groups playing the hook
+ * rule need the dealer to leave it uneven; everyone else just likes knowing.
+ */
+function describeGap(difference: number): string {
+  if (difference === 0) return 'even';
+  return difference > 0 ? `${difference} over` : `${Math.abs(difference)} under`;
 }
 
 function sumOf(players: Player[], pick: (player: Player) => number | null): number {

@@ -32,6 +32,7 @@ export function settingsFromPreset(presetId: string, notes = ''): GameSettings {
     endCondition: { ...preset.settings.endCondition },
     stakes: { ...preset.settings.stakes },
     bidScoring: { ...preset.settings.bidScoring },
+    deal: { ...preset.settings.deal },
     notes,
   };
 }
@@ -63,6 +64,31 @@ export function createSession(input: {
     settings: input.settings,
     rounds: [],
     firstDealerIndex: input.firstDealerIndex ?? 0,
+  };
+}
+
+/**
+ * Bring a session saved by an older build up to the current shape. Settings
+ * gain new blocks over time (stakes, bidding, the deal) and screens read them
+ * without guarding, so a game saved before a block existed would otherwise
+ * throw the moment it was opened.
+ */
+export function hydrateSession(session: GameSession): GameSession {
+  const fallback = settingsFromPreset('custom');
+  const stored = session.settings ?? fallback;
+  return {
+    ...session,
+    players: session.players ?? [],
+    rounds: session.rounds ?? [],
+    firstDealerIndex: session.firstDealerIndex ?? 0,
+    settings: {
+      ...fallback,
+      ...stored,
+      endCondition: { ...fallback.endCondition, ...stored.endCondition },
+      stakes: { ...fallback.stakes, ...stored.stakes },
+      bidScoring: { ...fallback.bidScoring, ...stored.bidScoring },
+      deal: { ...fallback.deal, ...stored.deal },
+    },
   };
 }
 
@@ -135,6 +161,7 @@ export function rematch(session: GameSession): GameSession {
       endCondition: { ...session.settings.endCondition },
       stakes: { ...session.settings.stakes },
       bidScoring: { ...session.settings.bidScoring },
+      deal: { ...session.settings.deal },
     },
     // Pass the deal along to the next player, the way a real table would.
     firstDealerIndex:

@@ -1,4 +1,4 @@
-import type { GamePreset, GameSettings } from '../types';
+import type { Deal, DealPattern, GamePreset, GameSettings } from '../types';
 
 const base: Omit<GameSettings, 'notes'> = {
   direction: 'high',
@@ -15,6 +15,7 @@ const base: Omit<GameSettings, 'notes'> = {
     missed: 'nothing',
     penaltyPerTrick: 10,
   },
+  deal: { pattern: 'fixed', maxCards: 10 },
 };
 
 function preset(
@@ -22,7 +23,7 @@ function preset(
   name: string,
   blurb: string,
   overrides: Partial<Omit<GameSettings, 'notes'>>,
-  extras: Pick<GamePreset, 'suggestedPlayers' | 'roundsFor'> = {},
+  extras: Pick<GamePreset, 'suggestedPlayers' | 'dealFor'> = {},
 ): GamePreset {
   return {
     id,
@@ -35,16 +36,21 @@ function preset(
       endCondition: { ...base.endCondition, ...overrides.endCondition },
       stakes: { ...base.stakes, ...overrides.stakes },
       bidScoring: { ...base.bidScoring, ...overrides.bidScoring },
+      deal: { ...base.deal, ...overrides.deal },
     },
   };
 }
 
 /**
- * Trick-taking games deal out the whole deck, so the hand count is the deck
- * divided by the table. Both of these count down from a full hand to one.
+ * Trick-taking games share one deck out, so the biggest hand anyone can be
+ * dealt is the deck divided by the table — capped, because most groups do not
+ * want a twelve-card opening hand even when the deck allows it.
  */
-function dealsFromDeck(deckSize: number) {
-  return (playerCount: number) => Math.max(1, Math.floor(deckSize / playerCount));
+function dealFromDeck(deckSize: number, pattern: DealPattern, cap = Infinity) {
+  return (playerCount: number): Deal => ({
+    pattern,
+    maxCards: Math.max(1, Math.min(cap, Math.floor(deckSize / playerCount))),
+  });
 }
 
 /**
@@ -97,7 +103,8 @@ export const PRESETS: GamePreset[] = [
       roundLabel: 'Hand',
       trackDealer: true,
       allowNegative: false,
-      endCondition: { type: 'rounds', rounds: 13, target: 500, comparison: 'atLeast' },
+      endCondition: { type: 'rounds', rounds: 19, target: 500, comparison: 'atLeast' },
+      deal: { pattern: 'downUp', maxCards: 10 },
       // officialgamerules.org: a point a trick, plus 10 for calling it
       // exactly. Bid 3 and take 3 is 13; bid 3 and take 4 is just 4.
       bidScoring: {
@@ -108,9 +115,9 @@ export const PRESETS: GamePreset[] = [
         penaltyPerTrick: 1,
       },
     },
-    // A standard 52-card deck dealt out evenly: 13 hands for four players,
-    // 8 for six. Groups that cap the opening hand lower can just edit it.
-    { roundsFor: dealsFromDeck(52), suggestedPlayers: 4 },
+    // Ten cards each down to one and back up: nineteen hands. Bigger tables
+    // cannot spare ten each from one deck, so the opening hand shrinks.
+    { dealFor: dealFromDeck(52, 'downUp', 10), suggestedPlayers: 4 },
   ),
 
   preset(
@@ -122,6 +129,7 @@ export const PRESETS: GamePreset[] = [
       roundLabel: 'Hand',
       trackDealer: true,
       endCondition: { type: 'rounds', rounds: 15, target: 500, comparison: 'atLeast' },
+      deal: { pattern: 'up', maxCards: 15 },
       bidScoring: {
         enabled: true,
         exactBonus: 20,
@@ -130,7 +138,7 @@ export const PRESETS: GamePreset[] = [
         penaltyPerTrick: 10,
       },
     },
-    { roundsFor: dealsFromDeck(60) },
+    { dealFor: dealFromDeck(60, 'up') },
   ),
 
   preset('golf', 'Golf', 'Nine holes, lowest total takes it.', {

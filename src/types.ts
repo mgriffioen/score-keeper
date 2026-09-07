@@ -54,6 +54,19 @@ export interface Stakes {
   perRound: number;
 }
 
+/**
+ * How the hand size moves from round to round in a game that deals a
+ * different number of cards each time. "10, 9, 8 … 1, then back up to 10" is
+ * `downUp` with a max of 10.
+ */
+export type DealPattern = 'fixed' | 'down' | 'up' | 'downUp' | 'upDown';
+
+export interface Deal {
+  pattern: DealPattern;
+  /** The biggest hand dealt. Ignored when the pattern is 'fixed'. */
+  maxCards: number;
+}
+
 export interface GameSettings {
   direction: Direction;
   /** Score every player starts on (0 for most games, 501 for countdowns). */
@@ -67,6 +80,7 @@ export interface GameSettings {
   endCondition: EndCondition;
   stakes: Stakes;
   bidScoring: BidScoring;
+  deal: Deal;
   notes: string;
 }
 
@@ -113,11 +127,11 @@ export interface GamePreset {
   suggestedPlayers?: number;
   settings: Omit<GameSettings, 'notes'>;
   /**
-   * Games where the deal — and so the number of rounds — falls out of how
-   * many people are playing. Setup re-derives the round count whenever the
-   * table changes size.
+   * Games that deal a changing hand size. The deal — and so the number of
+   * rounds — depends on how many people are sharing the deck, so setup
+   * re-derives it whenever the table changes size.
    */
-  roundsFor?: (playerCount: number) => number;
+  dealFor?: (playerCount: number) => Deal;
 }
 
 export interface Standing {

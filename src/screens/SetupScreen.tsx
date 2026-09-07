@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PRESETS, findPreset } from '../lib/presets';
+import { dealRoundCount } from '../lib/deal';
 import {
   createSession,
   defaultPlayers,
@@ -37,7 +38,7 @@ export function SetupScreen(props: { onCancel: () => void; onStarted: (id: strin
       setFirstDealerIndex(0);
     }
     setSettings(
-      withDerivedRounds(settingsFromPreset(id, settings.notes), chosen, nextPlayers.length),
+      withDerivedDeal(settingsFromPreset(id, settings.notes), chosen, nextPlayers.length),
     );
     if (!nameTouched) setName(suggestName(id));
   };
@@ -46,7 +47,7 @@ export function SetupScreen(props: { onCancel: () => void; onStarted: (id: strin
     setPlayersTouched(true);
     setPlayers(next);
     if (firstDealerIndex >= next.length) setFirstDealerIndex(0);
-    setSettings((current) => withDerivedRounds(current, preset, next.length));
+    setSettings((current) => withDerivedDeal(current, preset, next.length));
   };
 
   const start = () => {
@@ -132,19 +133,25 @@ export function SetupScreen(props: { onCancel: () => void; onStarted: (id: strin
 }
 
 /**
- * Oh Hell and Wizard deal the whole deck out, so the number of hands is a
- * consequence of how many people are playing. Re-derive it whenever the table
+ * Oh Hell and Wizard share one deck out, so both the hand sizes and the number
+ * of hands follow from who is at the table. Re-derive the deal whenever that
  * changes — but never overwrite a round count the game no longer uses.
  */
-function withDerivedRounds(
+function withDerivedDeal(
   settings: GameSettings,
   preset: GamePreset,
   playerCount: number,
 ): GameSettings {
-  if (!preset.roundsFor || settings.endCondition.type !== 'rounds') return settings;
+  if (!preset.dealFor) return settings;
+  const deal = preset.dealFor(playerCount);
+  const rounds = dealRoundCount(deal);
   return {
     ...settings,
-    endCondition: { ...settings.endCondition, rounds: preset.roundsFor(playerCount) },
+    deal,
+    endCondition:
+      settings.endCondition.type === 'rounds' && rounds !== null
+        ? { ...settings.endCondition, rounds }
+        : settings.endCondition,
   };
 }
 

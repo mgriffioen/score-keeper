@@ -1,13 +1,23 @@
 import type {
+  DealPattern,
   EndConditionType,
   GameSettings,
   MissedBid,
   Player,
   TargetComparison,
 } from '../types';
+import { dealRoundCount, describeDeal } from '../lib/deal';
 import { Field, Segmented, Stepper, SwitchRow, clamp } from './ui';
 
 const ROUND_LABELS = ['Round', 'Hand', 'Deal', 'Turn', 'Hole', 'Leg', 'Frame'];
+
+const DEAL_PATTERNS: Array<{ value: DealPattern; label: string }> = [
+  { value: 'fixed', label: 'Same every hand' },
+  { value: 'down', label: 'Down' },
+  { value: 'up', label: 'Up' },
+  { value: 'downUp', label: 'Down, then up' },
+  { value: 'upDown', label: 'Up, then down' },
+];
 
 /**
  * The whole rule set for a game. Shared by new-game setup and the in-game
@@ -29,6 +39,22 @@ export function RulesForm(props: {
     patch({ stakes: { ...settings.stakes, ...changes } });
   const patchBids = (changes: Partial<GameSettings['bidScoring']>) =>
     patch({ bidScoring: { ...settings.bidScoring, ...changes } });
+
+  // The deal decides how many hands there are, so keep the two in step
+  // instead of letting a stale round count contradict the pattern.
+  const patchDeal = (changes: Partial<GameSettings['deal']>) => {
+    const deal = { ...settings.deal, ...changes };
+    const rounds = dealRoundCount(deal);
+    patch({
+      deal,
+      endCondition:
+        settings.endCondition.type === 'rounds' && rounds !== null
+          ? { ...settings.endCondition, rounds }
+          : settings.endCondition,
+    });
+  };
+
+  const dealtRounds = dealRoundCount(settings.deal);
 
   // A worked example beats explaining the formula in prose.
   const example = {
@@ -94,6 +120,44 @@ export function RulesForm(props: {
       </section>
 
       <section className="card">
+        <div className="section-title">The deal</div>
+        <div className="chiprow">
+          {DEAL_PATTERNS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className="chip"
+              aria-pressed={settings.deal.pattern === option.value}
+              onClick={() => patchDeal({ pattern: option.value })}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        {settings.deal.pattern === 'fixed' ? (
+          <p className="hint">
+            Every {unit} is the same size, so the app does not track how many cards are out.
+          </p>
+        ) : (
+          <div style={{ marginTop: 12 }}>
+            <Field label="Biggest hand">
+              <Stepper
+                ariaLabel="Biggest hand dealt"
+                value={settings.deal.maxCards}
+                onChange={(maxCards) => patchDeal({ maxCards: clamp(maxCards, 1, 60) })}
+                min={1}
+                max={60}
+              />
+            </Field>
+            <p className="hint">
+              {describeDeal(settings.deal)}
+              {dealtRounds !== null ? ` — ${dealtRounds} ${unit.toLowerCase()}s` : ''}
+            </p>
+          </div>
+        )}
+      </section>
+
+      <section className="card">
         <div className="section-title">How it ends</div>
         <Segmented
           ariaLabel="How the game ends"
@@ -114,15 +178,21 @@ export function RulesForm(props: {
 
         {settings.endCondition.type === 'rounds' ? (
           <div style={{ marginTop: 12 }}>
-            <Field label={`Number of ${unit}s`}>
-              <Stepper
-                ariaLabel="Number of rounds"
-                value={settings.endCondition.rounds}
-                onChange={(rounds) => patchEnd({ rounds: clamp(rounds, 1, 200) })}
-                min={1}
-                max={200}
-              />
-            </Field>
+            {dealtRounds === null ? (
+              <Field label={`Number of ${unit}s`}>
+                <Stepper
+                  ariaLabel="Number of rounds"
+                  value={settings.endCondition.rounds}
+                  onChange={(rounds) => patchEnd({ rounds: clamp(rounds, 1, 200) })}
+                  min={1}
+                  max={200}
+                />
+              </Field>
+            ) : (
+              <p className="hint" style={{ marginTop: 0 }}>
+                {dealtRounds} {unit.toLowerCase()}s — set by the deal above.
+              </p>
+            )}
           </div>
         ) : null}
 

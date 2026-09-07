@@ -22,6 +22,7 @@ import {
   totals,
 } from '../lib/scoring';
 import { formatMoney, formatSigned, joinParts, pluralize } from '../lib/format';
+import { cardsInRound } from '../lib/deal';
 import { PlayersForm } from '../components/PlayersForm';
 import { RulesForm } from '../components/RulesForm';
 import { ScoreEntrySheet, type DraftScores, type EntryResult } from '../components/ScoreEntrySheet';
@@ -67,6 +68,7 @@ export function GameScreen(props: {
   const nextDealer = dealerForRound(session, playedCount);
   const pct = progress(session);
   const pot = potTotal(session);
+  const cardsNow = cardsInRound(session.settings.deal, playedCount);
 
   // Totals as they stand before the round being entered, for on-screen context.
   const totalsBefore = (roundId?: string): Record<string, number> => {
@@ -106,6 +108,7 @@ export function GameScreen(props: {
         title={session.name}
         subtitle={joinParts(
           done ? 'Finished' : `${unit} ${roundNumber}`,
+          !done && cardsNow !== null ? `${cardsNow} cards` : null,
           describeRule(session.settings),
         )}
         left={
@@ -299,7 +302,14 @@ export function GameScreen(props: {
                         onClick={() => setDialog({ kind: 'editRound', round })}
                         style={{ cursor: 'pointer' }}
                       >
-                        <th scope="row">{index + 1}</th>
+                        <th scope="row">
+                          {index + 1}
+                          {cardsInRound(session.settings.deal, index) !== null ? (
+                            <span className="cell__called">
+                              {cardsInRound(session.settings.deal, index)} cards
+                            </span>
+                          ) : null}
+                        </th>
                         {session.players.map((player) => {
                           const value = round.scores[player.id];
                           const shown =
@@ -382,6 +392,7 @@ export function GameScreen(props: {
         open={dialog.kind === 'addRound'}
         title={`${unit} ${roundNumber}`}
         subtitle={[
+          cardsNow !== null ? `${cardsNow} cards each` : null,
           nextDealer ? `${nextDealer.name} deals` : null,
           bidMode ? 'call first, scores follow' : null,
         ]
@@ -393,6 +404,7 @@ export function GameScreen(props: {
         initial={entryFor(null)}
         allowNegative={session.settings.allowNegative}
         bidScoring={session.settings.bidScoring}
+        cardsThisRound={cardsNow}
         saveLabel="Save"
         onSave={commitRound}
         onCancel={close}
@@ -416,6 +428,14 @@ export function GameScreen(props: {
         initial={entryFor(dialog.kind === 'editRound' ? dialog.round : null)}
         allowNegative={session.settings.allowNegative}
         bidScoring={session.settings.bidScoring}
+        cardsThisRound={
+          dialog.kind === 'editRound'
+            ? cardsInRound(
+                session.settings.deal,
+                session.rounds.findIndex((round) => round.id === dialog.round.id),
+              )
+            : cardsNow
+        }
         saveLabel={dialog.kind === 'editRound' && dialog.round === pending ? 'Save' : 'Update'}
         onSave={(result) => {
           if (dialog.kind !== 'editRound') return;

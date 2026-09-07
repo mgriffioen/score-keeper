@@ -1,4 +1,5 @@
 import type { GameSession } from '../types';
+import { hydrateSession } from './session';
 
 /**
  * Sessions live in localStorage: the score pad keeps working with no signal in
@@ -14,7 +15,7 @@ function read(): GameSession[] {
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isSession);
+    return parsed.filter(isSession).map(hydrateSession);
   } catch {
     // Private browsing, a full quota, or hand-edited junk — start clean rather
     // than crash the app on launch.
@@ -101,7 +102,7 @@ export function importSessions(json: string): { added: number; updated: number }
     : (parsed as { sessions?: unknown }).sessions;
   if (!Array.isArray(incoming)) throw new Error('That file does not contain any saved games.');
 
-  const valid = incoming.filter(isSession);
+  const valid = incoming.filter(isSession).map(hydrateSession);
   if (valid.length === 0) throw new Error('That file does not contain any saved games.');
 
   const byId = new Map(getSessions().map((entry) => [entry.id, entry]));

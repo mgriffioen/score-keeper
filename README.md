@@ -26,7 +26,7 @@ count is re-derived whenever you add or remove a player.
   the interface.
 - **Negative scores** on or off, and **dealer tracking** that passes the deal
   round the table.
-- **Bidding**, for trick-taking games — see below.
+- **Bidding** and **the deal**, for trick-taking games — see below.
 - **Notes** for house rules.
 
 ### Called-trick games
@@ -47,6 +47,30 @@ Two presets arrive configured:
 Oh Hell follows [officialgamerules.org](https://officialgamerules.org/game-rules/oh-hell/):
 *"1 point per trick taken. +10 bonus points if the tricks taken exactly match
 your bid."* Bidding zero and making it earns the bonus like any other bid.
+
+#### The deal
+
+Games that change the hand size each round can say so. Pick a pattern — down,
+up, down then up, up then down — and the biggest hand, and the app works out
+the rest: how many cards are dealt each round, and how many rounds there are.
+
+Oh Hell's default is the classic **10, 9, 8 … 1, and back up to 10**: nineteen
+hands. The opening hand shrinks automatically if the table is too big to spare
+that many from one deck — six players get eight down to one and back, so
+fifteen hands. Wizard deals its own sixty-card deck a card at a time upwards.
+Set the pattern to *same every hand* and the app stops tracking cards
+altogether, which is what every non-trick-taking game does.
+
+When a pattern is set it decides the length of the game, so the round count
+stops being separately editable and reports what the deal says instead.
+
+Knowing the hand size earns its keep during play: the header reads
+`Hand 2 · 9 cards · 19 hands`, and while everyone is calling, the entry sheet
+totals it up — `8 called of 10 · 2 under`. Anyone playing the hook rule (the
+dealer may not make the bids add up to the tricks available) can see at a
+glance whether the table is even.
+
+#### Two passes
 
 Because you call before you play, a bid round is saved in two passes. Enter
 everyone's call and hit **Save**: the hand is now on the board with the bids
@@ -150,9 +174,12 @@ src/
     scoring.ts          totals, standings, end conditions, pot, dealer (pure)
     scoring.test.ts     tests for all of the above
     session.ts          creating and mutating a session
+    deal.ts             hand sizes round by round, and how many rounds
+    deal.test.ts        tests for every deal pattern
     presets.ts          the built-in games
     presets.test.ts     tests for the presets, their round counts and bid rules
     storage.ts          localStorage persistence, export and import
+    hydrate.test.ts     tests that games from older builds still open
     router.ts           hash routing, so the back button works
   components/
     ScoreEntrySheet.tsx the keypad
