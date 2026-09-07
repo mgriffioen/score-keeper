@@ -4,13 +4,16 @@ A mobile-first score pad for card games. Set up a table once — players, how yo
 win, when it ends, whether there's a pot — then tap in each hand on a built-in
 keypad. Everything is saved, named, and kept in a history you can come back to.
 
-## What it does
+**→ [mgriffioen.github.io/score-keeper](https://mgriffioen.github.io/score-keeper/)**
 
-**Set up any game.** Seventeen presets (Rummy, Hearts, Spades, Oh Hell, Wizard, Skull King, Golf,
-Cribbage, Farkle, poker night with a buy-in, and more) fill in sensible
-defaults, and every single one stays editable — they're starting points, not
-rules lawyers. Oh Hell and Wizard deal their whole deck out, so their hand
-count is re-derived whenever you add or remove a player.
+---
+
+## Setting up a game
+
+Seventeen presets — Rummy, Hearts, Spades, Oh Hell, Wizard, Skull King, Golf,
+Five Crowns, Cribbage, Canasta, Farkle, Uno, a 501 countdown, poker night, and
+more — fill in sensible defaults. Every one of them stays editable, during setup
+and mid-game: they are starting points, not rules lawyers.
 
 - **2 to 8 players**, named, reorderable, with a *shuffle seats* button for
   deciding who sits where.
@@ -22,38 +25,34 @@ count is re-derived whenever you add or remove a player.
   it off and keep playing.
 - **A pot:** a buy-in per player, optionally topped up each round, totalled and
   shown against the winner.
-- **Blinds on a clock**, for poker nights — see below.
-- **Round naming** — Round, Hand, Deal, Turn, Hole, Leg — used everywhere in
-  the interface.
+- **Round naming** — Round, Hand, Deal, Turn, Hole, Leg — used everywhere in the
+  interface.
 - **Negative scores** on or off, and **dealer tracking** that passes the deal
   round the table.
-- **Bidding** and **the deal**, for trick-taking games — see below.
 - **Notes** for house rules.
 
-### Blinds on a clock
+Trick-taking games get [bidding and a deal pattern](#trick-taking-games); poker
+nights get [blinds on a clock](#poker-night).
 
-Switch **Blinds** on and the game screen gains a countdown at the top: the level
-you're on, what the blinds are, what's next, and how long until they go up. It
-walks up the ladder on its own and chimes when it does.
+## Playing
 
-Poker night arrives with a nine-rung home-game ladder — 25/50 up to 500/1000,
-fifteen minutes each, with a ten-minute break in the middle. Every number is
-editable: small blind, big blind, ante and length per level, plus add, remove
-and reorder. **+ Add level** doubles the one before it, and breaks are their own
-kind of rung (a clock with no blinds, not counted in "level 3 of 8").
+**Entering scores.** Tapping a score opens a full-screen sheet with every player
+and a large keypad: digits, `±`, backspace, `C`, *Next*, and *Save*. It is a
+custom keypad rather than native text fields, which is what keeps the OS
+keyboard shut and the page from zooming as you type. Tap any player row to jump
+straight to them; on a laptop the number keys, `-`, `Backspace`, `Tab`/arrows
+and `Enter` all work too.
 
-Controls are ‹ and › to move a level, ↺ to put the current one back to full, and
-one big Pause/Resume.
+**Fixing mistakes.** Tap any row of the round table to re-enter or delete that
+round, or undo the last one from the game menu.
 
-**The clock is wall-clock arithmetic, not a ticking counter.** All that is
-stored is which level you were on, when it was last resumed, and how much of
-the level had already gone. Everything else is derived from the current time,
-which means it stays right through a locked phone, a backgrounded tab, or a
-reload — come back forty minutes later and it is on the level it should be on,
-not the one you left. Nothing is written to storage on a tick, only when
-someone actually presses something.
+**The history.** Every session is named and saved — games in progress at the
+top, finished games with their winner below. Rematch keeps the same table and
+rules with a clean sheet, and passes the deal on.
 
-### Called-trick games
+## Trick-taking games
+
+### Bidding
 
 Switch **Bidding** on and a round collects two numbers per player — what they
 called and what they took — and works out the points itself. The formula is
@@ -72,62 +71,72 @@ Oh Hell follows [officialgamerules.org](https://officialgamerules.org/game-rules
 *"1 point per trick taken. +10 bonus points if the tricks taken exactly match
 your bid."* Bidding zero and making it earns the bonus like any other bid.
 
-#### The deal
+### Calling, then scoring
+
+Because you call before you play, a bid round is saved in two passes. Enter
+everyone's call and hit **Save**: the hand goes on the board with the bids
+visible beside each name, but it does not yet count as played. When the hand is
+over the button reads **Score hand N** — reopen it, enter the tricks won, and
+the points land. Nothing about the length of the game moves until then.
+
+Turning bidding off part-way through leaves every hand already played exactly as
+it was scored.
+
+### The deal
 
 Games that change the hand size each round can say so. Pick a pattern — down,
-up, down then up, up then down — and the biggest hand, and the app works out
-the rest: how many cards are dealt each round, and how many rounds there are.
+up, down then up, up then down — and the biggest hand, and the app works out the
+rest: how many cards are dealt each round, and how many rounds there are. When a
+pattern is set it decides the length of the game, so the round count stops being
+separately editable and reports what the deal says instead.
 
-Oh Hell's default is the classic **10, 9, 8 … 1, and back up to 10**: nineteen
-hands. The opening hand shrinks automatically if the table is too big to spare
-that many from one deck — six players get eight down to one and back, so
-fifteen hands. Wizard deals its own sixty-card deck a card at a time upwards.
-Set the pattern to *same every hand* and the app stops tracking cards
-altogether, which is what every non-trick-taking game does.
-
-When a pattern is set it decides the length of the game, so the round count
-stops being separately editable and reports what the deal says instead.
+Oh Hell's default is the classic **10, 9, 8 … 1, and back up to 10** — nineteen
+hands. The opening hand shrinks automatically when the table is too big to spare
+that many from one deck, so six players get eight down to one and back, fifteen
+hands. Wizard deals its own sixty-card deck a card at a time upwards. Set the
+pattern to *same every hand* and the app stops tracking cards altogether, which
+is what every non-trick-taking game does.
 
 Knowing the hand size earns its keep during play: the header reads
 `Hand 2 · 9 cards · 19 hands`, and while everyone is calling, the entry sheet
 totals it up — `8 called of 10 · 2 under`. Anyone playing the hook rule (the
-dealer may not make the bids add up to the tricks available) can see at a
-glance whether the table is even.
+dealer may not make the bids add up to the tricks available) can see at a glance
+whether the table is even.
 
-#### Two passes
+## Poker night
 
-Because you call before you play, a bid round is saved in two passes. Enter
-everyone's call and hit **Save**: the hand is now on the board with the bids
-visible beside each name (and a running total of what the table has called, for
-anyone playing the hook rule), but it does not yet count as played. When the
-hand is over, the button reads **Score hand N** — reopen it, enter the tricks
-won, and the points land. Nothing about the length of the game moves until
-then.
+Switch **Blinds** on and the game screen gains a countdown at the top: the level
+you're on, what the blinds are, what's next, and how long until they go up. It
+walks up the ladder on its own, and chimes and buzzes when it does. Controls are
+‹ and › to move a level, ↺ to put the current one back to full, and one big
+Pause/Resume.
 
-Turning bidding off part-way through leaves every hand already played exactly
-as it was scored.
+The poker night preset arrives with a nine-rung home-game ladder — 25/50 up to
+500/1000, fifteen minutes each, with a ten-minute break in the middle. Every
+number is editable: small blind, big blind, ante and length per level, plus add
+and remove. **+ Add level** doubles the one before it. Breaks are their own kind
+of rung — a clock with no blinds, and not counted in "level 3 of 8".
 
-**Enter scores fast.** Tapping a score opens a full-screen sheet with every
-player and a large keypad: digits, `±`, backspace, `C`, *Next*, and *Save*. It
-is a custom keypad rather than native text fields, which is what keeps the OS
-keyboard shut and the page from zooming as you type. Tap any player row to jump
-straight to them; on a laptop the number keys, `-`, `Backspace`, `Tab`/arrows
-and `Enter` all work too.
+**The clock is wall-clock arithmetic, not a ticking counter.** All that is
+stored is which level you were on, when it was last resumed, and how much of the
+level had already gone; everything on screen is derived from the current time.
+That is what keeps it right through a locked phone, a backgrounded tab or a
+reload — come back forty minutes later and it is on the level it should be on,
+having rolled forward through the ones that passed, rather than the level you
+left. Nothing is written to storage on a tick, only when someone presses
+something.
 
-**Fix mistakes.** Tap any row of the round table to re-enter or delete that
-round, or undo the last one from the game menu.
+## Built for a phone
 
-**Keep the history.** Every session is named and saved — in progress games at
-the top, finished games with their winner below. Rematch keeps the same table
-and rules with a clean sheet and passes the deal on.
+**No zoom, on purpose.** Three things together stop the page moving while you
+enter scores: a `maximum-scale=1` viewport, `touch-action: manipulation` (which
+kills double-tap zoom while leaving normal scrolling alone), and a rule that no
+input is ever below 16px — the size at which iOS zooms a focused field. Score
+entry avoids native inputs entirely.
 
-### No zoom, on purpose
-
-Three things together stop the page moving while you enter scores: a
-`maximum-scale=1` viewport, `touch-action: manipulation` (which kills double-tap
-zoom while leaving normal scrolling alone), and a rule that no input is ever
-below 16px — the size at which iOS zooms a focused field. Score entry avoids
-native inputs entirely.
+Add it to a phone's home screen and it runs full-screen as a standalone app;
+there's a web app manifest and icons. It works in light and dark, and lays out
+from a 320px phone upwards.
 
 ## Where the data lives
 
@@ -141,7 +150,9 @@ backup** on the home screen.
 
 If you later want real cross-device sync, `src/lib/storage.ts` is the only file
 that touches persistence: reimplement its `read`/`write` against a backend and
-the rest of the app is unchanged.
+the rest of the app is unchanged. Sessions saved by older builds are brought up
+to the current shape on the way out of storage, so adding a settings block never
+breaks a game already on someone's phone.
 
 ## Running it
 
@@ -150,11 +161,9 @@ npm install
 npm run dev        # local dev server, also reachable from your phone on the LAN
 npm run build      # production build into dist/
 npm run preview    # serve the production build
-npm test           # scoring engine tests
+npm test           # unit tests: scoring, bidding, deal patterns, the clock
+npm run typecheck  # tsc, no emit
 ```
-
-Add it to a phone's home screen and it runs full-screen as a standalone app
-(there's a web app manifest and icons).
 
 ### Deploying
 
@@ -162,54 +171,50 @@ Add it to a phone's home screen and it runs full-screen as a standalone app
 to `main`. It sets `BASE_PATH` to `/<repo>/` so asset URLs resolve correctly on
 a project site.
 
-**Pages must be set to "GitHub Actions" as its source** — under **Settings →
-Pages → Build and deployment → Source**. This is the one piece of setup that
-is not in the repo, and getting it wrong fails in a way that looks like a bug
-in the app:
+**Pages must be set to "GitHub Actions" as its source**, under **Settings →
+Pages → Build and deployment → Source**. This is the one piece of setup that is
+not in the repo, and the workflow token cannot do it for you: creating or
+reconfiguring a Pages site needs repository admin, which `GITHUB_TOKEN` does not
+have whatever it declares under `permissions:`.
 
-> **Symptom:** the deployed page is blank, and the console shows
-> `GET .../src/main.tsx net::ERR_ABORTED 404 (Not Found)`.
->
-> **Cause:** Source is set to *Deploy from a branch* instead of *GitHub
-> Actions*. That runs GitHub's Jekyll builder over the repository root and
-> publishes the source tree verbatim — including the development `index.html`,
-> whose `<script src="/src/main.tsx">` is TypeScript that only a bundler can
-> load. The built `index.html` in `dist/` points at `/<repo>/assets/*.js`
-> instead; that is what should be served.
->
-> Both pipelines deploy if the source is a branch, and they race — so the
-> workflow can report success while Jekyll's output is what is actually live.
-> The tell is a second workflow run named **"pages build and deployment"**
-> alongside this one. Once the source is *GitHub Actions*, those stop.
+<details>
+<summary><strong>If the deployed page is blank with a 404 on <code>/src/main.tsx</code></strong></summary>
 
-The workflow token cannot set this itself: creating or reconfiguring a Pages
-site needs repository admin, which `GITHUB_TOKEN` does not have whatever it
-declares under `permissions:`.
+The source is set to *Deploy from a branch* instead of *GitHub Actions*. That
+runs GitHub's Jekyll builder over the repository root and publishes the source
+tree verbatim — including the development `index.html`, whose
+`<script src="/src/main.tsx">` is TypeScript that only a bundler can load. The
+built `index.html` in `dist/` points at `/<repo>/assets/*.js` instead; that is
+what should be served.
+
+Both pipelines deploy when the source is a branch, and they race — so this
+workflow can report success while Jekyll's output is what is actually live. The
+tell is a second workflow run named **"pages build and deployment"** appearing
+alongside this one. Once the source is *GitHub Actions*, those stop.
+
+</details>
 
 Any static host works just as well — the build is plain files with no server
 behind it. Serve `dist/` at the path you built it for.
 
-## Layout
+## How the code is laid out
 
 ```
 src/
   types.ts              the shape of a session, its settings and its rounds
   lib/
-    scoring.ts          totals, standings, end conditions, pot, dealer (pure)
-    scoring.test.ts     tests for all of the above
-    session.ts          creating and mutating a session
-    blinds.ts           the blinds ladder and the wall-clock countdown
-    blinds.test.ts      tests for the clock, including sleeping through levels
+    scoring.ts          totals, standings, end conditions, bids, pot, dealer
+    session.ts          creating, mutating and migrating a session
     deal.ts             hand sizes round by round, and how many rounds
-    deal.test.ts        tests for every deal pattern
+    blinds.ts           the blinds ladder and the wall-clock countdown
     presets.ts          the built-in games
-    presets.test.ts     tests for the presets, their round counts and bid rules
     storage.ts          localStorage persistence, export and import
-    hydrate.test.ts     tests that games from older builds still open
     router.ts           hash routing, so the back button works
+    useSessions.ts      the live view of what is saved
+    format.ts, id.ts    small shared helpers
   components/
+    ScoreEntrySheet.tsx the keypad, in points or bid-and-tricks mode
     BlindsClock.tsx     the countdown, its controls and its chime
-    ScoreEntrySheet.tsx the keypad
     RulesForm.tsx       the rule set, shared by setup and in-game settings
     PlayersForm.tsx     the table
     ui.tsx              buttons, fields, sheets, toasts
@@ -218,3 +223,7 @@ src/
     SetupScreen.tsx     new game
     GameScreen.tsx      scoreboard, round table, game menu
 ```
+
+The rules live in `lib/` as pure functions, which is where the tests are too —
+`scoring`, `deal`, `blinds`, `presets`, and one (`hydrate.test.ts`) that opens a
+session saved before half these features existed.
