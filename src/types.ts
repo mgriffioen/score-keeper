@@ -24,6 +24,26 @@ export interface EndCondition {
   comparison: TargetComparison;
 }
 
+/**
+ * Scoring for trick-taking games where you call your hand before playing it:
+ * Oh Hell, Wizard and friends. The round's points are derived from the bid and
+ * the tricks actually won rather than typed in directly.
+ */
+export interface BidScoring {
+  enabled: boolean;
+  /** Points for taking exactly what you called (10 in Oh Hell, 20 in Wizard). */
+  exactBonus: number;
+  /** Points per trick won, added only when the bid was exact. */
+  perTrickMade: number;
+  /** What a missed bid is worth. */
+  missed: MissedBid;
+  /** Points lost per trick over or under, when `missed` is 'penalty'. */
+  penaltyPerTrick: number;
+}
+
+/** Nothing at all, the tricks you won anyway, or a penalty per trick off. */
+export type MissedBid = 'nothing' | 'tricks' | 'penalty';
+
 export interface Stakes {
   enabled: boolean;
   /** Symbol only — this app never touches real money. */
@@ -46,14 +66,24 @@ export interface GameSettings {
   trackDealer: boolean;
   endCondition: EndCondition;
   stakes: Stakes;
+  bidScoring: BidScoring;
   notes: string;
 }
 
 export interface Round {
   id: string;
   createdAt: number;
-  /** playerId -> points scored this round. Missing/null means "not entered". */
+  /**
+   * playerId -> points scored this round. Missing/null means "not entered".
+   * In a bid-scoring game this is derived from `bids` and `tricks`, but it
+   * stays the one value totals are built from, so a game that switches
+   * scoring mode part-way keeps its history intact.
+   */
   scores: Record<string, number | null>;
+  /** Bid-scoring games: what each player called before the hand was played. */
+  bids?: Record<string, number | null>;
+  /** Bid-scoring games: how many tricks each player actually won. */
+  tricks?: Record<string, number | null>;
 }
 
 export type GameStatus = 'active' | 'completed';

@@ -8,6 +8,13 @@ const base: Omit<GameSettings, 'notes'> = {
   trackDealer: false,
   endCondition: { type: 'manual', rounds: 10, target: 500, comparison: 'atLeast' },
   stakes: { enabled: false, currency: '$', ante: 5, perRound: 0 },
+  bidScoring: {
+    enabled: false,
+    exactBonus: 10,
+    perTrickMade: 1,
+    missed: 'nothing',
+    penaltyPerTrick: 10,
+  },
 };
 
 function preset(
@@ -27,6 +34,7 @@ function preset(
       ...overrides,
       endCondition: { ...base.endCondition, ...overrides.endCondition },
       stakes: { ...base.stakes, ...overrides.stakes },
+      bidScoring: { ...base.bidScoring, ...overrides.bidScoring },
     },
   };
 }
@@ -83,27 +91,44 @@ export const PRESETS: GamePreset[] = [
   preset(
     'oh-hell',
     'Oh Hell',
-    'Bid your tricks exactly. A 52-card deck sets the hand count for your table.',
+    'Call your tricks exactly: a point a trick, plus 10 for getting it right. Best at four or five.',
     {
       direction: 'high',
       roundLabel: 'Hand',
       trackDealer: true,
+      allowNegative: false,
       endCondition: { type: 'rounds', rounds: 13, target: 500, comparison: 'atLeast' },
+      // officialgamerules.org: a point a trick, plus 10 for calling it
+      // exactly. Bid 3 and take 3 is 13; bid 3 and take 4 is just 4.
+      bidScoring: {
+        enabled: true,
+        exactBonus: 10,
+        perTrickMade: 1,
+        missed: 'tricks',
+        penaltyPerTrick: 1,
+      },
     },
     // A standard 52-card deck dealt out evenly: 13 hands for four players,
     // 8 for six. Groups that cap the opening hand lower can just edit it.
-    { roundsFor: dealsFromDeck(52) },
+    { roundsFor: dealsFromDeck(52), suggestedPlayers: 4 },
   ),
 
   preset(
     'wizard',
     'Wizard',
-    'Bid your tricks exactly; wizards and jesters bend the trumps. Its own 60-card deck sets the hand count.',
+    'Call your tricks; wizards and jesters bend the trumps. Its own 60-card deck sets the hand count.',
     {
       direction: 'high',
       roundLabel: 'Hand',
       trackDealer: true,
       endCondition: { type: 'rounds', rounds: 15, target: 500, comparison: 'atLeast' },
+      bidScoring: {
+        enabled: true,
+        exactBonus: 20,
+        perTrickMade: 10,
+        missed: 'penalty',
+        penaltyPerTrick: 10,
+      },
     },
     { roundsFor: dealsFromDeck(60) },
   ),

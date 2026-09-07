@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { GameSession, GameSettings } from '../types';
-import { createSession, addRound, rematch, settingsFromPreset } from './session';
+import type { BidScoring, GameSession, GameSettings } from '../types';
+import { createSession, addRound, rematch, replaceRound, settingsFromPreset } from './session';
 import {
   checkEnd,
   cumulativeTotals,
@@ -10,6 +10,10 @@ import {
   progress,
   standings,
   totals,
+  bidRoundScore,
+  scoresFromBids,
+  scoredRoundCount,
+  openRound,
 } from './scoring';
 
 function game(overrides: Partial<GameSettings> = {}, names = ['Ana', 'Bo', 'Cy']): GameSession {
@@ -28,7 +32,7 @@ function withRounds(session: GameSession, rows: number[][]): GameSession {
     current.players.forEach((player, index) => {
       scores[player.id] = row[index] ?? null;
     });
-    return addRound(current, scores);
+    return addRound(current, { scores });
   }, session);
 }
 
@@ -183,5 +187,113 @@ describe('before the first round', () => {
     });
     expect(checkEnd(base).reached).toBe(false);
     expect(checkEnd(withRounds(base, [[0, 0, 0]])).reached).toBe(true);
+  });
+});
+
+describe('bid scoring', () => {
+  const ohHell: BidScoring = {
+    enabled: true,
+    exactBonus: 10,
+    perTrickMade: 1,
+    missed: 'nothing',
+    penaltyPerTrick: 1,
+  };
+  const wizard: BidScoring = {
+    enabled: true,
+    exactBonus: 20,
+    perTrickMade: 10,
+    missed: 'penalty',
+    penaltyPerTrick: 10,
+  };
+
+  it('pays the bonus plus a trick rate for calling it exactly', () => {
+    expect(bidRoundScore(3, 3, ohHell)).toBe(13);
+    expect(bidRoundScore(0, 0, ohHell)).toBe(10);
+    expect(bidRoundScore(2, 2, wizard)).toBe(40);
+  });
+
+  it('pays nothing for a miss, over or under', () => {
+    expect(bidRoundScore(3, 2, ohHell)).toBe(0);
+    expect(bidRoundScore(3, 5, ohHell)).toBe(0);
+  });
+
+  it('can pay the tricks won instead, when the house says so', () => {
+    expect(bidRoundScore(3, 2, { ...ohHell, missed: 'tricks' })).toBe(2);
+  });
+
+  it('can dock a penalty per trick out, in either direction', () => {
+    expect(bidRoundScore(3, 1, wizard)).toBe(-20);
+    expect(bidRoundScore(1, 3, wizard)).toBe(-20);
+  });
+
+  it('scores nothing at all until the hand has been played', () => {
+    expect(bidRoundScore(3, null, ohHell)).toBeNull();
+    expect(bidRoundScore(null, 3, ohHell)).toBeNull();
+  });
+
+  it('builds a whole round from its bids and tricks', () => {
+    const players = [
+      { id: 'a', name: 'Ana' },
+      { id: 'b', name: 'Bo' },
+      { id: 'c', name: 'Cy' },
+    ];
+    const scores = scoresFromBids(
+      players,
+      { a: 2, b: 0, c: 4 },
+      { a: 2, b: 1, c: null },
+      ohHell,
+    );
+    expect(scores).toEqual({ a: 12, b: 0, c: null });
+  });
+});
+
+describe('called but not yet played', () => {
+  function bidGame(): GameSession {
+    return game({
+      bidScoring: {
+        enabled: true,
+        exactBonus: 10,
+        perTrickMade: 1,
+        missed: 'nothing',
+        penaltyPerTrick: 1,
+      },
+      endCondition: { type: 'rounds', rounds: 2, target: 0, comparison: 'atLeast' },
+    });
+  }
+
+  const called = { p0: 1, p1: 2, p2: 0 };
+
+  it('does not count a round that only has bids on it', () => {
+    const session = addRound(bidGame(), { scores: {}, bids: called });
+    expect(session.rounds).toHaveLength(1);
+    expect(scoredRoundCount(session)).toBe(0);
+    expect(openRound(session)?.bids).toEqual(called);
+  });
+
+  it('counts the round once the tricks are in', () => {
+    const withBids = addRound(bidGame(), { scores: {}, bids: called });
+    const played = replaceRound(withBids, withBids.rounds[0].id, {
+      scores: { p0: 11, p1: 0, p2: 10 },
+      bids: called,
+      tricks: { p0: 1, p1: 1, p2: 0 },
+    });
+    expect(scoredRoundCount(played)).toBe(1);
+    expect(openRound(played)).toBeNull();
+    expect(totals(played)).toEqual({ p0: 11, p1: 0, p2: 10 });
+  });
+
+  it('does not end a game on a round that has only been called', () => {
+    let session = bidGame();
+    for (const tricks of [{ p0: 1, p1: 2, p2: 0 }]) {
+      session = addRound(session, {
+        scores: scoresFromBids(session.players, called, tricks, session.settings.bidScoring),
+        bids: called,
+        tricks,
+      });
+    }
+    // One hand played, one merely called: the two-hand game is not over.
+    session = addRound(session, { scores: {}, bids: called });
+    expect(checkEnd(session).reached).toBe(false);
+    expect(progress(session)).toBeCloseTo(0.5);
   });
 });

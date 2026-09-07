@@ -1,4 +1,10 @@
-import type { EndConditionType, GameSettings, Player, TargetComparison } from '../types';
+import type {
+  EndConditionType,
+  GameSettings,
+  MissedBid,
+  Player,
+  TargetComparison,
+} from '../types';
 import { Field, Segmented, Stepper, SwitchRow, clamp } from './ui';
 
 const ROUND_LABELS = ['Round', 'Hand', 'Deal', 'Turn', 'Hole', 'Leg', 'Frame'];
@@ -21,6 +27,16 @@ export function RulesForm(props: {
     patch({ endCondition: { ...settings.endCondition, ...changes } });
   const patchStakes = (changes: Partial<GameSettings['stakes']>) =>
     patch({ stakes: { ...settings.stakes, ...changes } });
+  const patchBids = (changes: Partial<GameSettings['bidScoring']>) =>
+    patch({ bidScoring: { ...settings.bidScoring, ...changes } });
+
+  // A worked example beats explaining the formula in prose.
+  const example = {
+    bid: 3,
+    made: settings.bidScoring.exactBonus + settings.bidScoring.perTrickMade * 3,
+    missBy: 2,
+    penalty: settings.bidScoring.penaltyPerTrick,
+  };
 
   const unit = settings.roundLabel.toLowerCase();
 
@@ -143,6 +159,67 @@ export function RulesForm(props: {
       </section>
 
       <section className="card">
+        <div className="section-title">Bidding</div>
+        <SwitchRow
+          title="Call your tricks"
+          sub="Enter a bid and the tricks won; the points work themselves out."
+          checked={settings.bidScoring.enabled}
+          onChange={(enabled) => patchBids({ enabled })}
+        />
+        {settings.bidScoring.enabled ? (
+          <div style={{ marginTop: 12 }}>
+            <Field label="Points for calling it exactly">
+              <Stepper
+                ariaLabel="Bonus for an exact bid"
+                value={settings.bidScoring.exactBonus}
+                onChange={(exactBonus) => patchBids({ exactBonus })}
+                min={0}
+                max={1000}
+              />
+            </Field>
+            <Field
+              label="Plus, per trick won"
+              hint={`Calling ${example.bid} and taking ${example.bid} is worth ${example.made}.`}
+            >
+              <Stepper
+                ariaLabel="Points per trick when the bid is made"
+                value={settings.bidScoring.perTrickMade}
+                onChange={(perTrickMade) => patchBids({ perTrickMade })}
+                min={0}
+                max={1000}
+              />
+            </Field>
+            <Field label="Miss your bid and you get">
+              <Segmented
+                ariaLabel="What a missed bid scores"
+                value={settings.bidScoring.missed}
+                onChange={(missed: MissedBid) => patchBids({ missed })}
+                options={[
+                  { value: 'nothing', label: 'Nothing' },
+                  { value: 'tricks', label: 'Your tricks' },
+                  { value: 'penalty', label: 'A penalty' },
+                ]}
+              />
+            </Field>
+            {settings.bidScoring.missed === 'penalty' ? (
+              <Field
+                label="Points off per trick over or under"
+                hint={`Calling ${example.bid} and taking ${example.missBy} costs ${example.penalty}.`}
+              >
+                <Stepper
+                  ariaLabel="Penalty per trick out"
+                  value={settings.bidScoring.penaltyPerTrick}
+                  onChange={(penaltyPerTrick) => patchBids({ penaltyPerTrick })}
+                  min={0}
+                  max={1000}
+                />
+              </Field>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
+
+      <section className="card">
         <div className="section-title">Pot</div>
         <SwitchRow
           title="Buy-in and pot"
@@ -189,12 +266,14 @@ export function RulesForm(props: {
 
       <section className="card">
         <div className="section-title">Table</div>
-        <SwitchRow
-          title="Allow negative scores"
-          sub={`Show the ± key when entering a ${unit}.`}
-          checked={settings.allowNegative}
-          onChange={(allowNegative) => patch({ allowNegative })}
-        />
+        {settings.bidScoring.enabled ? null : (
+          <SwitchRow
+            title="Allow negative scores"
+            sub={`Show the ± key when entering a ${unit}.`}
+            checked={settings.allowNegative}
+            onChange={(allowNegative) => patch({ allowNegative })}
+          />
+        )}
         <SwitchRow
           title="Track the deal"
           sub="Show whose turn it is to deal and pass it along each round."

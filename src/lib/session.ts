@@ -31,6 +31,7 @@ export function settingsFromPreset(presetId: string, notes = ''): GameSettings {
     ...preset.settings,
     endCondition: { ...preset.settings.endCondition },
     stakes: { ...preset.settings.stakes },
+    bidScoring: { ...preset.settings.bidScoring },
     notes,
   };
 }
@@ -71,20 +72,36 @@ export function emptyRound(players: Player[]): Round {
   return { id: uid('r'), createdAt: Date.now(), scores };
 }
 
-export function addRound(session: GameSession, scores: Record<string, number | null>): GameSession {
-  const round: Round = { id: uid('r'), createdAt: Date.now(), scores: { ...scores } };
+/** What one round's entry produces: points, plus the bids behind them. */
+export interface RoundEntry {
+  scores: Record<string, number | null>;
+  bids?: Record<string, number | null>;
+  tricks?: Record<string, number | null>;
+}
+
+function roundFrom(entry: RoundEntry): Omit<Round, 'id' | 'createdAt'> {
+  const round: Omit<Round, 'id' | 'createdAt'> = { scores: { ...entry.scores } };
+  if (entry.bids) round.bids = { ...entry.bids };
+  if (entry.tricks) round.tricks = { ...entry.tricks };
+  return round;
+}
+
+export function addRound(session: GameSession, entry: RoundEntry): GameSession {
+  const round: Round = { id: uid('r'), createdAt: Date.now(), ...roundFrom(entry) };
   return { ...session, rounds: [...session.rounds, round] };
 }
 
 export function replaceRound(
   session: GameSession,
   roundId: string,
-  scores: Record<string, number | null>,
+  entry: RoundEntry,
 ): GameSession {
   return {
     ...session,
     rounds: session.rounds.map((round) =>
-      round.id === roundId ? { ...round, scores: { ...scores } } : round,
+      round.id === roundId
+        ? { id: round.id, createdAt: round.createdAt, ...roundFrom(entry) }
+        : round,
     ),
   };
 }
@@ -117,6 +134,7 @@ export function rematch(session: GameSession): GameSession {
       ...session.settings,
       endCondition: { ...session.settings.endCondition },
       stakes: { ...session.settings.stakes },
+      bidScoring: { ...session.settings.bidScoring },
     },
     // Pass the deal along to the next player, the way a real table would.
     firstDealerIndex:

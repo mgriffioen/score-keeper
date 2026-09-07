@@ -1,4 +1,62 @@
-import type { GameSession, Player, Round, Standing } from '../types';
+import type { BidScoring, GameSession, GameSettings, Player, Round, Standing } from '../types';
+
+/**
+ * What one player's called-and-played hand is worth. Taking exactly what you
+ * called pays the bonus plus a rate per trick — 10 + 1 per trick in Oh Hell,
+ * 20 + 10 in Wizard. Missing pays whatever the house says it pays.
+ */
+export function bidRoundScore(
+  bid: number | null | undefined,
+  tricks: number | null | undefined,
+  rules: BidScoring,
+): number | null {
+  // Nothing to score until the hand has actually been played.
+  if (tricks === null || tricks === undefined) return null;
+  if (bid === null || bid === undefined) return null;
+
+  if (bid === tricks) return rules.exactBonus + rules.perTrickMade * tricks;
+  if (rules.missed === 'tricks') return tricks;
+  if (rules.missed === 'penalty') return -rules.penaltyPerTrick * Math.abs(bid - tricks);
+  return 0;
+}
+
+/** Recompute a whole round's scores from its bids and tricks. */
+export function scoresFromBids(
+  players: Player[],
+  bids: Record<string, number | null>,
+  tricks: Record<string, number | null>,
+  rules: BidScoring,
+): Record<string, number | null> {
+  const scores: Record<string, number | null> = {};
+  for (const player of players) {
+    scores[player.id] = bidRoundScore(bids[player.id], tricks[player.id], rules);
+  }
+  return scores;
+}
+
+/**
+ * True once a round has been played out, as opposed to merely called. A
+ * bid-scoring round is saved as soon as everyone has called, so that the bids
+ * are on screen during the hand — but it must not count towards the length of
+ * the game until the tricks are in.
+ */
+export function isRoundScored(round: Round, settings: GameSettings): boolean {
+  const source = settings.bidScoring.enabled ? round.tricks : round.scores;
+  if (!source) return false;
+  return Object.values(source).some((value) => value !== null && value !== undefined);
+}
+
+/** How many rounds actually count towards a game measured in rounds. */
+export function scoredRoundCount(session: GameSession): number {
+  return session.rounds.filter((round) => isRoundScored(round, session.settings)).length;
+}
+
+/** The round in progress: called, but not yet played out. Null if there isn't one. */
+export function openRound(session: GameSession): Round | null {
+  const last = session.rounds.at(-1);
+  if (!last || isRoundScored(last, session.settings)) return null;
+  return last;
+}
 
 /** Points a player scored in one round (a blank entry counts as 0). */
 export function roundScore(round: Round, playerId: string): number {
@@ -82,10 +140,10 @@ export function checkEnd(session: GameSession): EndCheck {
 
   // A game cannot be over before a single hand is played, however the
   // starting score and target happen to line up.
-  if (session.rounds.length === 0) return notReached;
+  if (scoredRoundCount(session) === 0) return notReached;
 
   if (endCondition.type === 'rounds') {
-    if (session.rounds.length >= endCondition.rounds) {
+    if (scoredRoundCount(session) >= endCondition.rounds) {
       return {
         reached: true,
         reason: `All ${endCondition.rounds} ${session.settings.roundLabel.toLowerCase()}s have been played.`,
@@ -121,7 +179,7 @@ export function progress(session: GameSession): number | null {
   const { endCondition, startingScore } = session.settings;
   if (endCondition.type === 'rounds') {
     if (endCondition.rounds <= 0) return null;
-    return clamp01(session.rounds.length / endCondition.rounds);
+    return clamp01(scoredRoundCount(session) / endCondition.rounds);
   }
   if (endCondition.type === 'target') {
     const span = endCondition.target - startingScore;

@@ -13,6 +13,8 @@ import {
   checkEnd,
   cumulativeTotals,
   dealerForRound,
+  openRound,
+  scoredRoundCount,
   listNames,
   potTotal,
   progress,
@@ -22,7 +24,7 @@ import {
 import { formatMoney, formatSigned, joinParts, pluralize } from '../lib/format';
 import { PlayersForm } from '../components/PlayersForm';
 import { RulesForm } from '../components/RulesForm';
-import { ScoreEntrySheet, type DraftScores } from '../components/ScoreEntrySheet';
+import { ScoreEntrySheet, type DraftScores, type EntryResult } from '../components/ScoreEntrySheet';
 import { BarButton, ConfirmSheet, Field, Segmented, Sheet, TopBar, toast } from '../components/ui';
 
 type Dialog =
@@ -56,8 +58,13 @@ export function GameScreen(props: {
   const end = useMemo(() => checkEnd(session), [session]);
   const done = session.status === 'completed';
   const unit = session.settings.roundLabel;
-  const roundNumber = session.rounds.length + 1;
-  const nextDealer = dealerForRound(session, session.rounds.length);
+  const bidMode = session.settings.bidScoring.enabled;
+  // A bid game saves the hand as soon as everyone has called, so the bids are
+  // on screen while it is played. That hand is still the one in progress.
+  const pending = openRound(session);
+  const playedCount = scoredRoundCount(session);
+  const roundNumber = playedCount + 1;
+  const nextDealer = dealerForRound(session, playedCount);
   const pct = progress(session);
   const pot = potTotal(session);
 
@@ -75,11 +82,21 @@ export function GameScreen(props: {
 
   const showEndPrompt = !done && end.reached && endDismissedAt !== session.rounds.length;
 
-  const commitRound = (scores: DraftScores) => {
-    save(addRound(session, scores));
+  const commitRound = (result: EntryResult) => {
+    save(addRound(session, result));
     setEndDismissedAt(-1);
     close();
   };
+
+  /** Everything the entry sheet needs to reopen a round exactly as saved. */
+  const entryFor = (round: Round | null): {
+    scores: DraftScores;
+    bids?: DraftScores;
+    tricks?: DraftScores;
+  } =>
+    round
+      ? { scores: round.scores, bids: round.bids, tricks: round.tricks }
+      : { scores: blankScores(session.players) };
 
   const winners = session.players.filter((player) => session.winnerIds?.includes(player.id));
 
@@ -146,7 +163,11 @@ export function GameScreen(props: {
         <section className="card card--flush">
           <div className={session.players.length > 5 ? 'standings standings--dense' : 'standings'}>
             {table.map((entry) => {
-              const last = session.rounds.at(-1)?.scores[entry.player.id];
+              // While a hand is called but unplayed, show what they called
+              // rather than the score of the hand before it.
+              const called = pending?.bids?.[entry.player.id];
+              const lastPlayed = pending ? session.rounds.at(-2) : session.rounds.at(-1);
+              const last = lastPlayed?.scores[entry.player.id];
               return (
                 <button
                   key={entry.player.id}
@@ -159,7 +180,7 @@ export function GameScreen(props: {
                     <span className="standing__name">{entry.player.name}</span>
                     <span className="standing__meta">
                       {entry.rank === 1
-                        ? session.rounds.length === 0
+                        ? playedCount === 0
                           ? 'level'
                           : 'leading'
                         : `${entry.behind} behind`}
@@ -168,7 +189,9 @@ export function GameScreen(props: {
                   </span>
                   <span>
                     <span className="standing__total tabular">{entry.total}</span>
-                    {last !== null && last !== undefined ? (
+                    {called !== null && called !== undefined ? (
+                      <span className="standing__last">called {called}</span>
+                    ) : last !== null && last !== undefined ? (
                       <span className="standing__last">last {formatSigned(last)}</span>
                     ) : null}
                   </span>
@@ -187,13 +210,13 @@ export function GameScreen(props: {
         <section className="summary">
           <div className="stat">
             <div className="stat__label">{unit}s played</div>
-            <div className="stat__value">{session.rounds.length}</div>
+            <div className="stat__value">{playedCount}</div>
           </div>
           {session.settings.endCondition.type === 'rounds' ? (
             <div className="stat">
               <div className="stat__label">Remaining</div>
               <div className="stat__value">
-                {Math.max(0, session.settings.endCondition.rounds - session.rounds.length)}
+                {Math.max(0, session.settings.endCondition.rounds - playedCount)}
               </div>
             </div>
           ) : null}
@@ -282,12 +305,19 @@ export function GameScreen(props: {
                           const shown =
                             tableMode === 'running' ? running[index][player.id] : value;
                           const blank = tableMode === 'round' && (value === null || value === undefined);
+                          const bid = round.bids?.[player.id];
+                          const won = round.tricks?.[player.id];
                           return (
                             <td
                               key={player.id}
                               className={blank ? 'cell--blank' : shown === 0 ? 'cell--zero' : undefined}
                             >
                               {blank ? '–' : shown}
+                              {bidMode && tableMode === 'round' && bid !== null && bid !== undefined ? (
+                                <span className="cell__called">
+                                  {bid} → {won ?? '–'}
+                                </span>
+                              ) : null}
                             </td>
                           );
                         })}
@@ -315,9 +345,13 @@ export function GameScreen(props: {
           <button
             type="button"
             className="btn btn--primary btn--block"
-            onClick={() => setDialog({ kind: 'addRound' })}
+            onClick={() =>
+              setDialog(pending ? { kind: 'editRound', round: pending } : { kind: 'addRound' })
+            }
           >
-            + Add {unit.toLowerCase()} {roundNumber}
+            {pending
+              ? `Score ${unit.toLowerCase()} ${roundNumber}`
+              : `+ Add ${unit.toLowerCase()} ${roundNumber}`}
           </button>
         </div>
       ) : (
@@ -347,12 +381,18 @@ export function GameScreen(props: {
       <ScoreEntrySheet
         open={dialog.kind === 'addRound'}
         title={`${unit} ${roundNumber}`}
-        subtitle={nextDealer ? `${nextDealer.name} deals` : undefined}
+        subtitle={[
+          nextDealer ? `${nextDealer.name} deals` : null,
+          bidMode ? 'call first, scores follow' : null,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
         players={session.players}
         runningTotals={totalByPlayer}
-        showRunningTotals={session.rounds.length > 0}
-        initial={blankScores(session.players)}
+        showRunningTotals={playedCount > 0}
+        initial={entryFor(null)}
         allowNegative={session.settings.allowNegative}
+        bidScoring={session.settings.bidScoring}
         saveLabel="Save"
         onSave={commitRound}
         onCancel={close}
@@ -365,16 +405,21 @@ export function GameScreen(props: {
             ? `${unit} ${session.rounds.findIndex((round) => round.id === dialog.round.id) + 1}`
             : unit
         }
-        subtitle="Fix a mis-typed score"
+        subtitle={
+          dialog.kind === 'editRound' && dialog.round === pending
+            ? 'Everyone has called — enter the tricks won'
+            : 'Fix a mis-typed score'
+        }
         players={session.players}
         runningTotals={dialog.kind === 'editRound' ? totalsBefore(dialog.round.id) : totalByPlayer}
-        showRunningTotals={session.rounds.length > 1}
-        initial={dialog.kind === 'editRound' ? dialog.round.scores : blankScores(session.players)}
+        showRunningTotals={playedCount > 1}
+        initial={entryFor(dialog.kind === 'editRound' ? dialog.round : null)}
         allowNegative={session.settings.allowNegative}
-        saveLabel="Update"
-        onSave={(scores) => {
+        bidScoring={session.settings.bidScoring}
+        saveLabel={dialog.kind === 'editRound' && dialog.round === pending ? 'Save' : 'Update'}
+        onSave={(result) => {
           if (dialog.kind !== 'editRound') return;
-          save(replaceRound(session, dialog.round.id, scores));
+          save(replaceRound(session, dialog.round.id, result));
           setEndDismissedAt(-1);
           close();
         }}

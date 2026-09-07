@@ -26,7 +26,38 @@ count is re-derived whenever you add or remove a player.
   the interface.
 - **Negative scores** on or off, and **dealer tracking** that passes the deal
   round the table.
+- **Bidding**, for trick-taking games — see below.
 - **Notes** for house rules.
+
+### Called-trick games
+
+Switch **Bidding** on and a round collects two numbers per player — what they
+called and what they took — and works out the points itself. The formula is
+yours to set: a bonus for calling it exactly, a rate per trick on top, and a
+choice of what a miss is worth (nothing, the tricks you took anyway, or a
+penalty per trick out).
+
+Two presets arrive configured:
+
+| | Made your bid | Missed |
+|---|---|---|
+| **Oh Hell** | 10 + 1 per trick — bid 3, take 3, score 13 | the tricks you took — bid 3, take 4, score 4 |
+| **Wizard** | 20 + 10 per trick | −10 per trick over or under |
+
+Oh Hell follows [officialgamerules.org](https://officialgamerules.org/game-rules/oh-hell/):
+*"1 point per trick taken. +10 bonus points if the tricks taken exactly match
+your bid."* Bidding zero and making it earns the bonus like any other bid.
+
+Because you call before you play, a bid round is saved in two passes. Enter
+everyone's call and hit **Save**: the hand is now on the board with the bids
+visible beside each name (and a running total of what the table has called, for
+anyone playing the hook rule), but it does not yet count as played. When the
+hand is over, the button reads **Score hand N** — reopen it, enter the tricks
+won, and the points land. Nothing about the length of the game moves until
+then.
+
+Turning bidding off part-way through leaves every hand already played exactly
+as it was scored.
 
 **Enter scores fast.** Tapping a score opens a full-screen sheet with every
 player and a large keypad: digits, `±`, backspace, `C`, *Next*, and *Save*. It
@@ -120,7 +151,7 @@ src/
     scoring.test.ts     tests for all of the above
     session.ts          creating and mutating a session
     presets.ts          the built-in games
-    presets.test.ts     tests for the presets and their derived round counts
+    presets.test.ts     tests for the presets, their round counts and bid rules
     storage.ts          localStorage persistence, export and import
     router.ts           hash routing, so the back button works
   components/

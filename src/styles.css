@@ -800,6 +800,76 @@ textarea.input {
   }
 }
 
+/* Bid games put two boxes on each row: what you called, what you took. */
+.entryhead {
+  display: grid;
+  grid-template-columns: 1fr 60px 60px;
+  gap: 8px;
+  padding: 0 12px 2px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.entryhead span + span {
+  text-align: center;
+}
+
+.entry--bid {
+  grid-template-columns: 1fr 60px 60px;
+  gap: 8px;
+}
+.entry__who {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.entry--bid .entry__name {
+  display: block;
+}
+.entry--bid .entry__running {
+  display: block;
+  min-height: 16px;
+}
+.entry__made {
+  color: var(--accent);
+}
+.entry__missed {
+  color: var(--muted);
+}
+
+.cell {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--bg-sunken);
+  font-family: var(--numeric);
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.cell--empty {
+  color: var(--line-strong);
+}
+.cell--active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.entrysum {
+  margin: 2px 0 0;
+  text-align: right;
+  padding-right: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
 .keypad {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -822,6 +892,9 @@ textarea.input {
 }
 .key:active {
   background: var(--bg-elev-2);
+}
+.key:disabled {
+  opacity: 0.3;
 }
 .key--util {
   font-size: 17px;
@@ -993,6 +1066,10 @@ textarea.input {
   .entry__value {
     font-size: 24px;
   }
+  .cell {
+    height: 40px;
+    font-size: 20px;
+  }
   .key {
     height: 48px;
     font-size: 22px;
@@ -1001,4 +1078,12 @@ textarea.input {
     gap: 5px;
     padding: 10px 12px;
   }
+}
+
+/* A round table cell in a bid game carries its call underneath the points. */
+.cell__called {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
 }
