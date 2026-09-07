@@ -28,11 +28,10 @@ jobs:
       - name: Build
         # Project sites are served from /<repo>/, so assets need that prefix.
         run: BASE_PATH="/${GITHUB_REPOSITORY#*/}/" npm run build
+      # Pages must already be enabled with GitHub Actions as the source:
+      # Settings -> Pages -> Build and deployment -> Source. The workflow
+      # token cannot create the site itself (that needs repo admin).
       - uses: actions/configure-pages@v5
-        with:
-          # Turns Pages on (source: GitHub Actions) the first time this
-          # runs, so the repo needs no manual setup.
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
