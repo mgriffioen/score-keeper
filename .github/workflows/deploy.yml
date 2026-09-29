@@ -26,8 +26,12 @@ jobs:
       - run: npm ci
       - run: npm test
       - name: Build
-        # Project sites are served from /<repo>/, so assets need that prefix.
-        run: BASE_PATH="/${GITHUB_REPOSITORY#*/}/" npm run build
+        # Served from the custom domain score.mgriffioen.com (set under
+        # Settings -> Pages -> Custom domain), i.e. at the root, so assets live
+        # under /. mgriffioen.github.io/score-keeper/ redirects there. If the
+        # custom domain is ever removed, set BASE_PATH="/${GITHUB_REPOSITORY#*/}/"
+        # again or every asset 404s and the page is blank.
+        run: npm run build
       # Pages must already be set to "GitHub Actions" as its source, under
       # Settings -> Pages -> Build and deployment -> Source. The workflow token
       # cannot set that itself (it needs repo admin).

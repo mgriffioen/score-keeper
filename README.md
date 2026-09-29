@@ -4,7 +4,7 @@ A mobile-first score pad for card games. Set up a table once — players, how yo
 win, when it ends, whether there's a pot — then tap in each hand on a built-in
 keypad. Everything is saved, named, and kept in a history you can come back to.
 
-**→ [mgriffioen.github.io/score-keeper](https://mgriffioen.github.io/score-keeper/)**
+**→ [score.mgriffioen.com](https://score.mgriffioen.com/)**
 
 ---
 
@@ -170,8 +170,11 @@ npm run typecheck  # tsc, no emit
 ### Deploying
 
 `.github/workflows/deploy.yml` publishes `dist/` to GitHub Pages on every push
-to `main`. It sets `BASE_PATH` to `/<repo>/` so asset URLs resolve correctly on
-a project site.
+to `main`. The site is served from the custom domain `score.mgriffioen.com`
+(configured under **Settings → Pages → Custom domain**), so it is built for the
+root path `/`. If the custom domain is ever dropped, the build needs
+`BASE_PATH=/<repo>/` again, because a plain project site lives under that
+prefix.
 
 **Pages must be set to "GitHub Actions" as its source**, under **Settings →
 Pages → Build and deployment → Source**. This is the one piece of setup that is
@@ -186,7 +189,7 @@ The source is set to *Deploy from a branch* instead of *GitHub Actions*. That
 runs GitHub's Jekyll builder over the repository root and publishes the source
 tree verbatim — including the development `index.html`, whose
 `<script src="/src/main.tsx">` is TypeScript that only a bundler can load. The
-built `index.html` in `dist/` points at `/<repo>/assets/*.js` instead; that is
+built `index.html` in `dist/` points at `/assets/*.js` instead; that is
 what should be served.
 
 Both pipelines deploy when the source is a branch, and they race — so this
