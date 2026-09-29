@@ -30,6 +30,8 @@ and mid-game: they are starting points, not rules lawyers.
 - **Negative scores** on or off, and **dealer tracking** that passes the deal
   round the table.
 - **Notes** for house rules.
+- **How to play** — every preset carries a short rules card (setup, turn, scoring),
+  one tap away on the setup screen and in the game menu mid-game.
 
 Trick-taking games get [bidding and a deal pattern](#trick-taking-games); poker
 nights get [blinds on a clock](#poker-night).

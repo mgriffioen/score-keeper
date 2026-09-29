@@ -1231,3 +1231,24 @@ textarea.input {
   color: var(--muted);
   text-align: center;
 }
+
+/* ---------------------------------------------------------------- rules -- */
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.rules__goal {
+  margin: 0;
+  font-weight: 600;
+}
+.rules__list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rules__list li::marker {
+  color: var(--muted);
+}

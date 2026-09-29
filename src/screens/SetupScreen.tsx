@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PRESETS, findPreset } from '../lib/presets';
+import { rulesFor } from '../lib/rules';
 import { dealRoundCount } from '../lib/deal';
 import {
   createSession,
@@ -12,6 +13,7 @@ import { upsertSession } from '../lib/storage';
 import type { GamePreset, GameSettings, Player } from '../types';
 import { PlayersForm } from '../components/PlayersForm';
 import { RulesForm } from '../components/RulesForm';
+import { HowToPlaySheet } from '../components/HowToPlaySheet';
 import { BarButton, Field, TopBar } from '../components/ui';
 
 export function SetupScreen(props: { onCancel: () => void; onStarted: (id: string) => void }) {
@@ -22,8 +24,10 @@ export function SetupScreen(props: { onCancel: () => void; onStarted: (id: strin
   const [playersTouched, setPlayersTouched] = useState(false);
   const [settings, setSettings] = useState<GameSettings>(() => settingsFromPreset('custom'));
   const [firstDealerIndex, setFirstDealerIndex] = useState(0);
+  const [showRules, setShowRules] = useState(false);
 
   const preset = findPreset(presetId);
+  const rules = rulesFor(presetId);
 
   const choosePreset = (id: string) => {
     const chosen = findPreset(id);
@@ -93,6 +97,16 @@ export function SetupScreen(props: { onCancel: () => void; onStarted: (id: strin
             ))}
           </div>
           <p className="hint">{preset.blurb} Swipe for more — everything below stays editable.</p>
+          {rules ? (
+            <button
+              type="button"
+              className="btn btn--ghost btn--block"
+              style={{ marginTop: 12 }}
+              onClick={() => setShowRules(true)}
+            >
+              How to play {preset.name}
+            </button>
+          ) : null}
         </section>
 
         <section className="card">
@@ -128,6 +142,13 @@ export function SetupScreen(props: { onCancel: () => void; onStarted: (id: strin
           Start game
         </button>
       </div>
+
+      <HowToPlaySheet
+        open={showRules}
+        name={preset.name}
+        rules={rules}
+        onClose={() => setShowRules(false)}
+      />
     </>
   );
 }
