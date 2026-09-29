@@ -23,7 +23,10 @@ import {
 } from '../lib/scoring';
 import { formatMoney, formatSigned, joinParts, pluralize } from '../lib/format';
 import { cardsInRound } from '../lib/deal';
+import { findPreset } from '../lib/presets';
+import { rulesFor } from '../lib/rules';
 import { BlindsClock } from '../components/BlindsClock';
+import { HowToPlaySheet } from '../components/HowToPlaySheet';
 import { PlayersForm } from '../components/PlayersForm';
 import { RulesForm } from '../components/RulesForm';
 import { ScoreEntrySheet, type DraftScores, type EntryResult } from '../components/ScoreEntrySheet';
@@ -34,6 +37,7 @@ type Dialog =
   | { kind: 'menu' }
   | { kind: 'rename' }
   | { kind: 'settings' }
+  | { kind: 'howToPlay' }
   | { kind: 'addRound' }
   | { kind: 'editRound'; round: Round }
   | { kind: 'player'; player: Player }
@@ -70,6 +74,7 @@ export function GameScreen(props: {
   const pct = progress(session);
   const pot = potTotal(session);
   const cardsNow = cardsInRound(session.settings.deal, playedCount);
+  const rules = rulesFor(session.presetId);
 
   // Totals as they stand before the round being entered, for on-screen context.
   const totalsBefore = (roundId?: string): Record<string, number> => {
@@ -477,6 +482,15 @@ export function GameScreen(props: {
         >
           Players &amp; rules
         </button>
+        {rules ? (
+          <button
+            type="button"
+            className="btn btn--block"
+            onClick={() => setDialog({ kind: 'howToPlay' })}
+          >
+            How to play {findPreset(session.presetId).name}
+          </button>
+        ) : null}
         {!done ? (
           <button
             type="button"
@@ -567,6 +581,14 @@ export function GameScreen(props: {
           onFirstDealerChange={(firstDealerIndex) => save({ ...session, firstDealerIndex })}
         />
       </Sheet>
+
+      {/* ------------------------------------------------- how to play -- */}
+      <HowToPlaySheet
+        open={dialog.kind === 'howToPlay'}
+        name={findPreset(session.presetId).name}
+        rules={rules}
+        onClose={close}
+      />
 
       {/* -------------------------------------------------- player row -- */}
       <RenameSheet
