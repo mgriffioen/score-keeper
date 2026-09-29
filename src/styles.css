@@ -132,9 +132,7 @@ textarea {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 4px;
-  /* Extra headroom under the status bar: iOS fades page content that sits
-     right below it in a home-screen web app, which washed out the game name. */
-  padding: calc(var(--safe-top) + 16px) 8px 10px;
+  padding: calc(var(--safe-top) + 10px) 8px 10px;
   background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
