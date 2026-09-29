@@ -115,7 +115,8 @@ textarea {
 .app {
   display: flex;
   flex-direction: column;
-  min-height: 100svh;
+  min-height: 100vh;
+  min-height: 100dvh;
   max-width: 640px;
   margin: 0 auto;
   background: var(--bg);
@@ -131,7 +132,9 @@ textarea {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 4px;
-  padding: calc(var(--safe-top) + 10px) 8px 10px;
+  /* Extra headroom under the status bar: iOS fades page content that sits
+     right below it in a home-screen web app, which washed out the game name. */
+  padding: calc(var(--safe-top) + 16px) 8px 10px;
   background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
@@ -142,6 +145,7 @@ textarea {
   text-align: center;
   font-size: 17px;
   font-weight: 650;
+  line-height: 1.25;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -151,6 +155,7 @@ textarea {
   display: block;
   font-size: 12px;
   font-weight: 500;
+  line-height: 1.35;
   color: var(--muted);
 }
 
@@ -202,14 +207,21 @@ textarea {
   padding-bottom: calc(var(--tap) + 40px + var(--safe-bottom));
 }
 
+/* Pinned to the viewport rather than the end of the page: in a home-screen
+   web app the viewport-height units can come up short, which left the button
+   floating well above the bottom edge. The home indicator's inset already
+   gives the button room, so it is not padded on top of that. */
 .dock {
-  position: sticky;
+  position: fixed;
+  left: 0;
+  right: 0;
   bottom: 0;
   z-index: 15;
-  margin-top: auto;
+  max-width: 640px;
+  margin: 0 auto;
   display: flex;
   gap: 10px;
-  padding: 12px var(--pad) calc(12px + var(--safe-bottom));
+  padding: 12px var(--pad) max(12px, var(--safe-bottom));
   background: color-mix(in srgb, var(--bg) 90%, transparent);
   backdrop-filter: blur(12px);
   border-top: 1px solid var(--line);
