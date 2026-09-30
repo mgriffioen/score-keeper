@@ -496,7 +496,7 @@ textarea.input {
   margin-top: 8px;
 }
 .playerrow__seat {
-  width: 28px;
+  width: 20px;
   flex: none;
   text-align: center;
   font-size: 13px;
@@ -512,6 +512,47 @@ textarea.input {
   background: transparent;
   color: var(--muted);
   font-size: 20px;
+}
+.playerrow__handle {
+  width: 32px;
+  height: var(--tap);
+  flex: none;
+  display: grid;
+  place-items: center;
+  margin-right: -6px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted);
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.playerrow__handle svg {
+  fill: currentColor;
+}
+.playerrow__handle:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.playerrow--sorting {
+  position: relative;
+  transition: transform 0.18s ease;
+}
+.playerrow--dragging {
+  z-index: 1;
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  transition: none;
+}
+.playerrow--dragging .playerrow__handle {
+  color: var(--accent);
+  cursor: grabbing;
+}
+.playerrow--dragging .input {
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 .playerrow__remove:active {
   background: var(--danger-soft);
