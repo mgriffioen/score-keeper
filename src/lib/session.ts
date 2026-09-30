@@ -1,4 +1,4 @@
-import type { GameSession, GameSettings, Player, Round } from '../types';
+import type { GameSession, GameSettings, Player, Round, TrickTable } from '../types';
 import { uid } from './id';
 import { findPreset } from './presets';
 import { leaders } from './scoring';
@@ -32,6 +32,7 @@ export function settingsFromPreset(presetId: string, notes = ''): GameSettings {
     endCondition: { ...preset.settings.endCondition },
     stakes: { ...preset.settings.stakes },
     bidScoring: { ...preset.settings.bidScoring },
+    trickTable: cloneTrickTable(preset.settings.trickTable),
     deal: { ...preset.settings.deal },
     blinds: {
       ...preset.settings.blinds,
@@ -39,6 +40,10 @@ export function settingsFromPreset(presetId: string, notes = ''): GameSettings {
     },
     notes,
   };
+}
+
+function cloneTrickTable(table: TrickTable): TrickTable {
+  return { ...table, bands: (table.bands ?? []).map((band) => ({ ...band })) };
 }
 
 /** "Rummy — Sep 7" style, so the history list is scannable without typing. */
@@ -91,6 +96,7 @@ export function hydrateSession(session: GameSession): GameSession {
       endCondition: { ...fallback.endCondition, ...stored.endCondition },
       stakes: { ...fallback.stakes, ...stored.stakes },
       bidScoring: { ...fallback.bidScoring, ...stored.bidScoring },
+      trickTable: cloneTrickTable({ ...fallback.trickTable, ...stored.trickTable }),
       deal: { ...fallback.deal, ...stored.deal },
       blinds: { ...fallback.blinds, ...stored.blinds, levels: stored.blinds?.levels ?? [] },
     },
@@ -108,12 +114,14 @@ export interface RoundEntry {
   scores: Record<string, number | null>;
   bids?: Record<string, number | null>;
   tricks?: Record<string, number | null>;
+  bonus?: Record<string, number | null>;
 }
 
 function roundFrom(entry: RoundEntry): Omit<Round, 'id' | 'createdAt'> {
   const round: Omit<Round, 'id' | 'createdAt'> = { scores: { ...entry.scores } };
   if (entry.bids) round.bids = { ...entry.bids };
   if (entry.tricks) round.tricks = { ...entry.tricks };
+  if (entry.bonus) round.bonus = { ...entry.bonus };
   return round;
 }
 
@@ -166,6 +174,7 @@ export function rematch(session: GameSession): GameSession {
       endCondition: { ...session.settings.endCondition },
       stakes: { ...session.settings.stakes },
       bidScoring: { ...session.settings.bidScoring },
+      trickTable: cloneTrickTable(session.settings.trickTable),
       deal: { ...session.settings.deal },
       blinds: {
         ...session.settings.blinds,

@@ -251,6 +251,47 @@ export const GAME_RULES: Record<string, GameRules> = {
     ],
   },
 
+  'fox-in-the-forest': {
+    goal: 'Win some tricks, but not too many — the greedy score nothing. First to 21.',
+    needs: '2 players, the 33-card Fox deck: bells, keys and moons, 1 to 11.',
+    sections: [
+      {
+        heading: 'The deal',
+        points: [
+          'Thirteen cards each. Turn the next card face up as the decree card: its suit is trump.',
+          'The last six cards sit face down as a small draw pile. The deal alternates each round.',
+        ],
+      },
+      {
+        heading: 'Play',
+        points: [
+          'The non-dealer leads the first trick. Follow suit if you can; otherwise play anything.',
+          'Highest trump wins, or the highest card of the suit led. The winner leads next.',
+        ],
+      },
+      {
+        heading: 'Odd cards',
+        points: [
+          '1 Swan: lose the trick with it and you lead the next one anyway.',
+          '3 Fox: you may swap a card from your hand for the decree card.',
+          '5 Woodcutter: draw a card, then put any card from your hand on the bottom of the pile.',
+          '7 Treasure: whoever wins the trick scores a point for each 7 in it.',
+          '9 Witch: if it is the only 9 in the trick, it counts as trump.',
+          '11 Monarch: lead it and your opponent must follow with the 1 of that suit or their highest card in it.',
+        ],
+      },
+      {
+        heading: 'Scoring',
+        points: [
+          'Tricks won: 0–3 is humble, 6 points. 4, 5 or 6 is defeated: 1, 2 or 3 points.',
+          '7–9 is victorious, 6 points. 10 or more is greedy: nothing at all.',
+          'Add a point for every treasure 7 won — enter those in the bonus box.',
+          'Play rounds until someone has 21 or more; the highest total wins.',
+        ],
+      },
+    ],
+  },
+
   golf: {
     goal: 'Hold the lowest-scoring cards over nine holes.',
     needs: '2–6 players, one 52-card deck (two for more than four).',

@@ -44,6 +44,31 @@ export interface BidScoring {
 /** Nothing at all, the tricks you won anyway, or a penalty per trick off. */
 export type MissedBid = 'nothing' | 'tricks' | 'penalty';
 
+/**
+ * One row of a trick-count scoring table: take between `min` and `max` tricks
+ * (inclusive) and the hand is worth `points`.
+ */
+export interface TrickBand {
+  min: number;
+  max: number;
+  points: number;
+}
+
+/**
+ * Scoring for trick-taking games that pay out on how many tricks you took,
+ * with no bid: The Fox in the Forest pays 6 for a humble 0–3, less for the
+ * middle, 6 again for 7–9 and nothing for a greedy 10 or more. A bonus column
+ * catches anything scored on top during the hand (Fox's treasure 7s).
+ */
+export interface TrickTable {
+  enabled: boolean;
+  bands: TrickBand[];
+  /** Tricks in a hand, for the "12 of 13 taken" check. 0 means don't check. */
+  tricksPerHand: number;
+  /** Collect a second number per player, added straight onto the hand. */
+  bonus: boolean;
+}
+
 export interface Stakes {
   enabled: boolean;
   /** Symbol only — this app never touches real money. */
@@ -113,6 +138,7 @@ export interface GameSettings {
   endCondition: EndCondition;
   stakes: Stakes;
   bidScoring: BidScoring;
+  trickTable: TrickTable;
   deal: Deal;
   blinds: Blinds;
   notes: string;
@@ -132,6 +158,8 @@ export interface Round {
   bids?: Record<string, number | null>;
   /** Bid-scoring games: how many tricks each player actually won. */
   tricks?: Record<string, number | null>;
+  /** Trick-table games: points scored on top of the table during the hand. */
+  bonus?: Record<string, number | null>;
 }
 
 export type GameStatus = 'active' | 'completed';

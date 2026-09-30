@@ -1,4 +1,12 @@
-import type { BidScoring, GameSession, GameSettings, Player, Round, Standing } from '../types';
+import type {
+  BidScoring,
+  GameSession,
+  GameSettings,
+  Player,
+  Round,
+  Standing,
+  TrickTable,
+} from '../types';
 
 /**
  * What one player's called-and-played hand is worth. Taking exactly what you
@@ -32,6 +40,42 @@ export function scoresFromBids(
     scores[player.id] = bidRoundScore(bids[player.id], tricks[player.id], rules);
   }
   return scores;
+}
+
+/**
+ * What one player's hand is worth in a trick-table game: the table's points
+ * for the tricks they took, plus any bonus. A count no band covers scores 0
+ * from the table.
+ */
+export function trickTableScore(
+  tricks: number | null | undefined,
+  bonus: number | null | undefined,
+  rules: TrickTable,
+): number | null {
+  if (tricks === null || tricks === undefined) return null;
+  const band = rules.bands.find((entry) => tricks >= entry.min && tricks <= entry.max);
+  return (band?.points ?? 0) + (rules.bonus ? (bonus ?? 0) : 0);
+}
+
+/** Recompute a whole round's scores from its tricks and bonuses. */
+export function scoresFromTrickTable(
+  players: Player[],
+  tricks: Record<string, number | null>,
+  bonus: Record<string, number | null>,
+  rules: TrickTable,
+): Record<string, number | null> {
+  const scores: Record<string, number | null> = {};
+  for (const player of players) {
+    scores[player.id] = trickTableScore(tricks[player.id], bonus[player.id], rules);
+  }
+  return scores;
+}
+
+/** "0–3", "4", "10+" — how a band reads in a table. */
+export function describeBand(band: { min: number; max: number }, tricksPerHand: number): string {
+  if (band.min === band.max) return String(band.min);
+  if (tricksPerHand > 0 && band.max >= tricksPerHand) return `${band.min}+`;
+  return `${band.min}–${band.max}`;
 }
 
 /**

@@ -38,6 +38,8 @@ describe('opening a game saved by an older build', () => {
   it('fills in settings blocks that did not exist yet', () => {
     const session = hydrateSession(ancient());
     expect(session.settings.bidScoring.enabled).toBe(false);
+    expect(session.settings.trickTable.enabled).toBe(false);
+    expect(session.settings.trickTable.bands).toEqual([]);
     expect(session.settings.stakes.enabled).toBe(false);
     expect(session.settings.deal.pattern).toBe('fixed');
   });

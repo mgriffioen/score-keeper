@@ -65,6 +65,7 @@ export function GameScreen(props: {
   const done = session.status === 'completed';
   const unit = session.settings.roundLabel;
   const bidMode = session.settings.bidScoring.enabled;
+  const trickMode = !bidMode && session.settings.trickTable.enabled;
   // A bid game saves the hand as soon as everyone has called, so the bids are
   // on screen while it is played. That hand is still the one in progress.
   const pending = openRound(session);
@@ -101,9 +102,10 @@ export function GameScreen(props: {
     scores: DraftScores;
     bids?: DraftScores;
     tricks?: DraftScores;
+    bonus?: DraftScores;
   } =>
     round
-      ? { scores: round.scores, bids: round.bids, tricks: round.tricks }
+      ? { scores: round.scores, bids: round.bids, tricks: round.tricks, bonus: round.bonus }
       : { scores: blankScores(session.players) };
 
   const winners = session.players.filter((player) => session.winnerIds?.includes(player.id));
@@ -331,6 +333,7 @@ export function GameScreen(props: {
                           const blank = tableMode === 'round' && (value === null || value === undefined);
                           const bid = round.bids?.[player.id];
                           const won = round.tricks?.[player.id];
+                          const extra = round.bonus?.[player.id];
                           return (
                             <td
                               key={player.id}
@@ -340,6 +343,12 @@ export function GameScreen(props: {
                               {bidMode && tableMode === 'round' && bid !== null && bid !== undefined ? (
                                 <span className="cell__called">
                                   {bid} → {won ?? '–'}
+                                </span>
+                              ) : null}
+                              {trickMode && tableMode === 'round' && won !== null && won !== undefined ? (
+                                <span className="cell__called">
+                                  {won} {won === 1 ? 'trick' : 'tricks'}
+                                  {extra ? ` +${extra}` : ''}
                                 </span>
                               ) : null}
                             </td>
@@ -418,6 +427,7 @@ export function GameScreen(props: {
         initial={entryFor(null)}
         allowNegative={session.settings.allowNegative}
         bidScoring={session.settings.bidScoring}
+        trickTable={session.settings.trickTable}
         cardsThisRound={cardsNow}
         saveLabel="Save"
         onSave={commitRound}
@@ -442,6 +452,7 @@ export function GameScreen(props: {
         initial={entryFor(dialog.kind === 'editRound' ? dialog.round : null)}
         allowNegative={session.settings.allowNegative}
         bidScoring={session.settings.bidScoring}
+        trickTable={session.settings.trickTable}
         cardsThisRound={
           dialog.kind === 'editRound'
             ? cardsInRound(

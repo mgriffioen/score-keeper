@@ -8,6 +8,8 @@ import type {
 } from '../types';
 import { dealRoundCount, describeDeal } from '../lib/deal';
 import { defaultLevels, nextLevelAfter } from '../lib/blinds';
+import { findPreset } from '../lib/presets';
+import { describeBand } from '../lib/scoring';
 import { useState } from 'react';
 import { Field, Segmented, Stepper, SwitchRow, clamp } from './ui';
 
@@ -39,8 +41,34 @@ export function RulesForm(props: {
     patch({ endCondition: { ...settings.endCondition, ...changes } });
   const patchStakes = (changes: Partial<GameSettings['stakes']>) =>
     patch({ stakes: { ...settings.stakes, ...changes } });
+  // Bidding and a trick table are two ways of turning tricks into points, so
+  // switching one on switches the other off.
   const patchBids = (changes: Partial<GameSettings['bidScoring']>) =>
-    patch({ bidScoring: { ...settings.bidScoring, ...changes } });
+    patch({
+      bidScoring: { ...settings.bidScoring, ...changes },
+      trickTable: changes.enabled
+        ? { ...settings.trickTable, enabled: false }
+        : settings.trickTable,
+    });
+  const patchTable = (changes: Partial<GameSettings['trickTable']>) => {
+    const trickTable = { ...settings.trickTable, ...changes };
+    // Nothing to edit in an empty table: start from The Fox in the Forest's.
+    if (trickTable.enabled && trickTable.bands.length === 0) {
+      const fox = findPreset('fox-in-the-forest').settings.trickTable;
+      trickTable.bands = fox.bands.map((band) => ({ ...band }));
+      trickTable.tricksPerHand = fox.tricksPerHand;
+    }
+    patch({
+      trickTable,
+      bidScoring: changes.enabled
+        ? { ...settings.bidScoring, enabled: false }
+        : settings.bidScoring,
+    });
+  };
+  const patchBand = (index: number, points: number) =>
+    patchTable({
+      bands: settings.trickTable.bands.map((band, i) => (i === index ? { ...band, points } : band)),
+    });
 
   // The deal decides how many hands there are, so keep the two in step
   // instead of letting a stale round count contradict the pattern.
@@ -301,6 +329,42 @@ export function RulesForm(props: {
       </section>
 
       <section className="card">
+        <div className="section-title">Trick table</div>
+        <SwitchRow
+          title="Score by tricks taken"
+          sub="No bid: enter the tricks each player won and a table sets the points."
+          checked={settings.trickTable.enabled}
+          onChange={(enabled) => patchTable({ enabled })}
+        />
+        {settings.trickTable.enabled ? (
+          <div style={{ marginTop: 12 }}>
+            {settings.trickTable.bands.map((band, index) => (
+              <Field
+                key={`${band.min}-${band.max}`}
+                label={`${describeBand(band, settings.trickTable.tricksPerHand)} ${
+                  band.min === band.max && band.min === 1 ? 'trick' : 'tricks'
+                }`}
+              >
+                <Stepper
+                  ariaLabel={`Points for ${describeBand(band, settings.trickTable.tricksPerHand)} tricks`}
+                  value={band.points}
+                  onChange={(points) => patchBand(index, points)}
+                  min={-1000}
+                  max={1000}
+                />
+              </Field>
+            ))}
+            <SwitchRow
+              title="Bonus points"
+              sub="A second box per player for points won during the hand, like Fox’s treasure 7s."
+              checked={settings.trickTable.bonus}
+              onChange={(bonus) => patchTable({ bonus })}
+            />
+          </div>
+        ) : null}
+      </section>
+
+      <section className="card">
         <div className="section-title">Pot</div>
         <SwitchRow
           title="Buy-in and pot"
@@ -463,7 +527,7 @@ export function RulesForm(props: {
 
       <section className="card">
         <div className="section-title">Table</div>
-        {settings.bidScoring.enabled ? null : (
+        {settings.bidScoring.enabled || settings.trickTable.enabled ? null : (
           <SwitchRow
             title="Allow negative scores"
             sub={`Show the ± key when entering a ${unit}.`}
