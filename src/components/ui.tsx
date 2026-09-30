@@ -4,10 +4,13 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 export function TopBar(props: {
   title: string;
   subtitle?: string;
+  /* A back button on the left switches to the centered-title layout. */
+  back?: ReactNode;
   actions?: ReactNode;
 }) {
   return (
-    <header className="topbar">
+    <header className={props.back ? 'topbar topbar--centered' : 'topbar'}>
+      {props.back ? <div className="topbar__back">{props.back}</div> : null}
       <div className="topbar__title">
         {props.title}
         {props.subtitle ? <span className="topbar__subtitle">{props.subtitle}</span> : null}

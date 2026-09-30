@@ -150,6 +150,21 @@ textarea {
   text-overflow: ellipsis;
 }
 
+.topbar--centered {
+  /* Side slots size to their buttons so a long game name gets the rest and
+     truncates, instead of squeezing the back button onto two lines. */
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding-left: 8px;
+}
+.topbar--centered .topbar__title {
+  text-align: center;
+}
+
+.topbar__back {
+  display: flex;
+  align-items: center;
+}
+
 .topbar__subtitle {
   display: block;
   font-size: 12px;
