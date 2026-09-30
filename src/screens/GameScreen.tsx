@@ -119,15 +119,15 @@ export function GameScreen(props: {
           !done && cardsNow !== null ? `${cardsNow} cards` : null,
           describeRule(session.settings),
         )}
-        left={
-          <BarButton onClick={props.onBack} muted label="Back to games">
-            ‹ Games
-          </BarButton>
-        }
-        right={
-          <BarButton onClick={() => setDialog({ kind: 'menu' })} muted label="Game menu">
-            •••
-          </BarButton>
+        actions={
+          <>
+            <BarButton onClick={props.onBack} muted label="Back to games">
+              ‹ Games
+            </BarButton>
+            <BarButton onClick={() => setDialog({ kind: 'menu' })} muted label="Game menu">
+              •••
+            </BarButton>
+          </>
         }
       />
 

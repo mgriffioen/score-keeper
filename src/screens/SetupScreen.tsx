@@ -74,7 +74,7 @@ export function SetupScreen(props: { onCancel: () => void; onStarted: (id: strin
     <>
       <TopBar
         title="New game"
-        left={<BarButton onClick={props.onCancel} muted>Cancel</BarButton>}
+        actions={<BarButton onClick={props.onCancel} muted>Cancel</BarButton>}
       />
 
       <main className="screen screen--with-dock">

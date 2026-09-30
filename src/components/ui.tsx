@@ -4,17 +4,15 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 export function TopBar(props: {
   title: string;
   subtitle?: string;
-  left?: ReactNode;
-  right?: ReactNode;
+  actions?: ReactNode;
 }) {
   return (
     <header className="topbar">
-      <div className="topbar__slot">{props.left}</div>
       <div className="topbar__title">
         {props.title}
         {props.subtitle ? <span className="topbar__subtitle">{props.subtitle}</span> : null}
       </div>
-      <div className="topbar__slot topbar__slot--end">{props.right}</div>
+      <div className="topbar__actions">{props.actions}</div>
     </header>
   );
 }

@@ -127,12 +127,13 @@ textarea {
   top: 0;
   z-index: 20;
   display: grid;
-  /* Side slots size to their buttons so a long game name gets the rest and
-     truncates, instead of squeezing the back button onto two lines. */
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  /* Title on the left, actions on the right. The actions size to their
+     buttons so a long game name gets the rest and truncates, instead of
+     squeezing a button onto two lines. */
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 4px;
-  padding: calc(var(--safe-top) + 10px) 8px 10px;
+  padding: calc(var(--safe-top) + 10px) 8px 10px var(--pad);
   background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
@@ -140,7 +141,7 @@ textarea {
 
 .topbar__title {
   min-width: 0;
-  text-align: center;
+  text-align: left;
   font-size: 17px;
   font-weight: 650;
   line-height: 1.25;
@@ -157,11 +158,9 @@ textarea {
   color: var(--muted);
 }
 
-.topbar__slot {
+.topbar__actions {
   display: flex;
   align-items: center;
-}
-.topbar__slot--end {
   justify-content: flex-end;
 }
 

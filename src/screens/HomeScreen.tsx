@@ -48,7 +48,7 @@ export function HomeScreen(props: { onNew: () => void; onOpen: (id: string) => v
     <>
       <TopBar
         title="Score Keeper"
-        right={
+        actions={
           <BarButton onClick={() => setMenuOpen(true)} muted label="More">
             •••
           </BarButton>
