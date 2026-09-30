@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { BidScoring, Player } from '../types';
-import { bidRoundScore, scoresFromBids } from '../lib/scoring';
+import type { BidScoring, Player, TrickTable } from '../types';
+import {
+  bidRoundScore,
+  scoresFromBids,
+  scoresFromTrickTable,
+  trickTableScore,
+} from '../lib/scoring';
 import { formatSigned } from '../lib/format';
 import { Sheet } from './ui';
 
@@ -10,10 +15,11 @@ export interface EntryResult {
   scores: DraftScores;
   bids?: DraftScores;
   tricks?: DraftScores;
+  bonus?: DraftScores;
 }
 
 /** Which box on a row the keypad is currently filling. */
-type Field = 'score' | 'bid' | 'tricks';
+type Field = 'score' | 'bid' | 'tricks' | 'bonus';
 
 /**
  * The score pad's hot path. Everything is typed on an in-app keypad rather
@@ -21,7 +27,9 @@ type Field = 'score' | 'bid' | 'tricks';
  * zooms on focus, and the whole table stays visible while you enter a hand.
  *
  * In a bid-scoring game each player gets two boxes — what they called and what
- * they took — and the points are worked out for you.
+ * they took — and the points are worked out for you. A trick-table game is the
+ * same idea without the call: the tricks taken, plus any bonus, and the table
+ * says what that is worth.
  */
 export function ScoreEntrySheet(props: {
   open: boolean;
@@ -32,10 +40,12 @@ export function ScoreEntrySheet(props: {
   runningTotals: Record<string, number>;
   /** Hidden on the very first round, when every total is still the same. */
   showRunningTotals: boolean;
-  initial: { scores: DraftScores; bids?: DraftScores; tricks?: DraftScores };
+  initial: { scores: DraftScores; bids?: DraftScores; tricks?: DraftScores; bonus?: DraftScores };
   allowNegative: boolean;
   /** When enabled, the sheet collects bids and tricks instead of raw points. */
   bidScoring: BidScoring;
+  /** When enabled (and bidding is not), the sheet collects tricks and bonuses. */
+  trickTable: TrickTable;
   /** Tricks going in this round, when the deal is tracked. */
   cardsThisRound?: number | null;
   saveLabel: string;
@@ -43,24 +53,30 @@ export function ScoreEntrySheet(props: {
   onCancel: () => void;
   onDelete?: () => void;
 }) {
-  const { open, players, initial, bidScoring } = props;
+  const { open, players, initial, bidScoring, trickTable } = props;
   const bidMode = bidScoring.enabled;
+  const tableMode = !bidMode && trickTable.enabled;
+  // Both modes put two small counts on each row rather than one raw score.
+  const pairMode = bidMode || tableMode;
+  const [firstField, secondField]: [Field, Field] = bidMode ? ['bid', 'tricks'] : ['tricks', 'bonus'];
+  const secondShown = bidMode || trickTable.bonus;
 
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [activeKey, setActiveKey] = useState<string>('');
   const cellRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   // Bids are called around the table first, then the hand is played and the
-  // tricks counted — so walk every bid before any trick count.
+  // tricks counted — so walk every bid before any trick count. A trick table
+  // walks the tricks first too, then the bonuses.
   const order = useMemo(
     () =>
-      bidMode
+      pairMode
         ? [
-            ...players.map((player) => key(player.id, 'bid')),
-            ...players.map((player) => key(player.id, 'tricks')),
+            ...players.map((player) => key(player.id, firstField)),
+            ...(secondShown ? players.map((player) => key(player.id, secondField)) : []),
           ]
         : players.map((player) => key(player.id, 'score')),
-    [bidMode, players],
+    [pairMode, firstField, secondField, secondShown, players],
   );
 
   // Reset every time the sheet opens so a reopened round starts from its
@@ -72,6 +88,9 @@ export function ScoreEntrySheet(props: {
       if (bidMode) {
         seeded[key(player.id, 'bid')] = show(initial.bids?.[player.id]);
         seeded[key(player.id, 'tricks')] = show(initial.tricks?.[player.id]);
+      } else if (tableMode) {
+        seeded[key(player.id, 'tricks')] = show(initial.tricks?.[player.id]);
+        seeded[key(player.id, 'bonus')] = show(initial.bonus?.[player.id]);
       } else {
         seeded[key(player.id, 'score')] = show(initial.scores[player.id]);
       }
@@ -81,7 +100,7 @@ export function ScoreEntrySheet(props: {
     // round puts you straight on the first trick count.
     const nextEmpty = order.find((entry) => seeded[entry] === '');
     setActiveKey(nextEmpty ?? order[0] ?? '');
-  }, [open, players, initial, bidMode, order]);
+  }, [open, players, initial, bidMode, tableMode, order]);
 
   const focusCell = useCallback((cellKey: string) => {
     setActiveKey(cellKey);
@@ -110,15 +129,15 @@ export function ScoreEntrySheet(props: {
       if (pressed === 'clear') return edit(() => '');
       if (pressed === 'back') return edit((value) => value.slice(0, -1));
       if (pressed === 'sign') {
-        if (!props.allowNegative || bidMode) return;
+        if (!props.allowNegative || pairMode) return;
         return edit((value) => (value.startsWith('-') ? value.slice(1) : `-${value}`));
       }
       // Trick counts are small; raw scores are not. Either way, cap the digits
       // so a stuck finger cannot produce a nonsense total.
-      const cap = bidMode ? 2 : 7;
+      const cap = pairMode ? 2 : 7;
       edit((value) => (digitCount(value) >= cap ? value : value + pressed));
     },
-    [bidMode, edit, props.allowNegative],
+    [pairMode, edit, props.allowNegative],
   );
 
   const valueAt = useCallback(
@@ -127,6 +146,15 @@ export function ScoreEntrySheet(props: {
   );
 
   const collect = useCallback((): EntryResult => {
+    if (tableMode) {
+      const tricks: DraftScores = {};
+      const bonus: DraftScores = {};
+      for (const player of players) {
+        tricks[player.id] = valueAt(player.id, 'tricks');
+        bonus[player.id] = valueAt(player.id, 'bonus');
+      }
+      return { scores: scoresFromTrickTable(players, tricks, bonus, trickTable), tricks, bonus };
+    }
     if (!bidMode) {
       const scores: DraftScores = {};
       for (const player of players) scores[player.id] = valueAt(player.id, 'score');
@@ -139,7 +167,7 @@ export function ScoreEntrySheet(props: {
       tricks[player.id] = valueAt(player.id, 'tricks');
     }
     return { scores: scoresFromBids(players, bids, tricks, bidScoring), bids, tricks };
-  }, [bidMode, bidScoring, players, valueAt]);
+  }, [bidMode, bidScoring, tableMode, trickTable, players, valueAt]);
 
   const entered = order.filter((entry) => parseDraft(drafts[entry] ?? '') !== null).length;
   const canSave = entered > 0;
@@ -184,17 +212,17 @@ export function ScoreEntrySheet(props: {
       { key: '4', label: '4' },
       { key: '5', label: '5' },
       { key: '6', label: '6' },
-      { key: 'sign', label: '±', util: true, disabled: !props.allowNegative || bidMode },
+      { key: 'sign', label: '±', util: true, disabled: !props.allowNegative || pairMode },
       { key: '1', label: '1' },
       { key: '2', label: '2' },
       { key: '3', label: '3' },
       { key: 'next', label: 'Next', util: true },
       { key: '0', label: '0' },
-      { key: '00', label: '00', disabled: bidMode },
+      { key: '00', label: '00', disabled: pairMode },
       { key: 'clear', label: 'C', util: true },
       { key: 'save', label: props.saveLabel, go: true },
     ],
-    [bidMode, props.allowNegative, props.saveLabel],
+    [pairMode, props.allowNegative, props.saveLabel],
   );
 
   const calledTotal = sumOf(players, (player) => valueAt(player.id, 'bid'));
@@ -218,7 +246,7 @@ export function ScoreEntrySheet(props: {
         ]
           .filter(Boolean)
           .join(' ')}
-        aria-label={`${field === 'bid' ? 'Bid' : 'Tricks won'} for ${player.name}`}
+        aria-label={`${FIELD_NAMES[field]} for ${player.name}`}
         onClick={() => focusCell(cellKey)}
       >
         {draft === '' ? '–' : draft}
@@ -236,16 +264,19 @@ export function ScoreEntrySheet(props: {
       onClose={props.onCancel}
     >
       <div className="entrylist">
-        {bidMode ? (
-          <div className="entryhead" aria-hidden="true">
+        {pairMode ? (
+          <div
+            className={secondShown ? 'entryhead' : 'entryhead entryhead--single'}
+            aria-hidden="true"
+          >
             <span />
-            <span>Bid</span>
-            <span>Won</span>
+            <span>{bidMode ? 'Bid' : 'Tricks'}</span>
+            {secondShown ? <span>{bidMode ? 'Won' : 'Bonus'}</span> : null}
           </div>
         ) : null}
 
         {players.map((player) => {
-          if (!bidMode) {
+          if (!pairMode) {
             const cellKey = key(player.id, 'score');
             const draft = drafts[cellKey] ?? '';
             return (
@@ -273,12 +304,20 @@ export function ScoreEntrySheet(props: {
 
           const bid = valueAt(player.id, 'bid');
           const tricks = valueAt(player.id, 'tricks');
-          const points = bidRoundScore(bid, tricks, bidScoring);
+          const points = bidMode
+            ? bidRoundScore(bid, tricks, bidScoring)
+            : trickTableScore(tricks, valueAt(player.id, 'bonus'), trickTable);
           // Green means "you called it", not merely "you scored" — a missed
-          // bid can still be worth something under some house rules.
-          const made = bid !== null && tricks !== null && bid === tricks;
+          // bid can still be worth something under some house rules. With no
+          // bid to make, green is simply "this hand paid".
+          const made = bidMode
+            ? bid !== null && tricks !== null && bid === tricks
+            : points !== null && points > 0;
           return (
-            <div className="entry entry--bid" key={player.id}>
+            <div
+              className={secondShown ? 'entry entry--bid' : 'entry entry--bid entry--single'}
+              key={player.id}
+            >
               <span className="entry__who">
                 <span className="entry__name">{player.name}</span>
                 <span className="entry__running">
@@ -293,8 +332,8 @@ export function ScoreEntrySheet(props: {
                   ) : null}
                 </span>
               </span>
-              {cell(player, 'bid')}
-              {cell(player, 'tricks')}
+              {cell(player, firstField)}
+              {secondShown ? cell(player, secondField) : null}
             </div>
           );
         })}
@@ -304,6 +343,15 @@ export function ScoreEntrySheet(props: {
             {calledTotal} called
             {available !== null ? ` of ${available} · ${describeGap(calledTotal - available)}` : ''}
             {wonTotal > 0 ? ` · ${wonTotal} won` : ''}
+          </p>
+        ) : null}
+
+        {tableMode && trickTable.tricksPerHand > 0 ? (
+          <p className="entrysum">
+            {wonTotal} of {trickTable.tricksPerHand} tricks
+            {wonTotal > 0 && wonTotal !== trickTable.tricksPerHand
+              ? ` · ${describeGap(wonTotal - trickTable.tricksPerHand)}`
+              : ''}
           </p>
         ) : null}
 
@@ -335,6 +383,13 @@ export function ScoreEntrySheet(props: {
     </Sheet>
   );
 }
+
+const FIELD_NAMES: Record<Field, string> = {
+  score: 'Score',
+  bid: 'Bid',
+  tricks: 'Tricks won',
+  bonus: 'Bonus points',
+};
 
 function key(playerId: string, field: Field): string {
   return `${playerId}|${field}`;

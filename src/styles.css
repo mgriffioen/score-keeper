@@ -871,6 +871,11 @@ textarea.input {
   grid-template-columns: 1fr 60px 60px;
   gap: 8px;
 }
+/* A trick table with no bonus column has just the one box. */
+.entryhead--single,
+.entry--bid.entry--single {
+  grid-template-columns: 1fr 60px;
+}
 .entry__who {
   min-width: 0;
   display: flex;

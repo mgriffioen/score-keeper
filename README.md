@@ -10,8 +10,8 @@ keypad. Everything is saved, named, and kept in a history you can come back to.
 
 ## Setting up a game
 
-Seventeen presets — Rummy, Hearts, Spades, Oh Hell, Wizard, Skull King, Golf,
-Five Crowns, Cribbage, Canasta, Farkle, Uno, a 501 countdown, poker night, and
+Eighteen presets — Rummy, Hearts, Spades, Oh Hell, Wizard, Skull King,
+The Fox in the Forest, Golf, Five Crowns, Cribbage, Canasta, Farkle, Uno, a 501 countdown, poker night, and
 more — fill in sensible defaults. Every one of them stays editable, during setup
 and mid-game: they are starting points, not rules lawyers.
 
@@ -83,6 +83,25 @@ the points land. Nothing about the length of the game moves until then.
 
 Turning bidding off part-way through leaves every hand already played exactly as
 it was scored.
+
+### Scoring by tricks taken
+
+Some games pay out on the number of tricks you took, with no bid. Switch on
+**Trick table** and each player gets a *Tricks* box, plus an optional *Bonus*
+box for points won during the hand; the table turns the count into points. The
+points for every row of the table are editable. Bidding and a trick table are
+two ways of doing the same job, so switching one on switches the other off.
+
+**The Fox in the Forest** arrives configured from the rulebook, as a
+two-player race to 21:
+
+| Tricks won | 0–3 | 4 | 5 | 6 | 7–9 | 10–13 |
+|---|---|---|---|---|---|---|
+| **Points** | 6 | 1 | 2 | 3 | 6 | 0 |
+
+Each treasure 7 in a trick you win is a point on top — that is what the bonus
+box is for. The entry sheet adds up the tricks (`12 of 13 tricks · 1 under`) so
+a mis-count shows before you save.
 
 ### The deal
 
@@ -208,7 +227,7 @@ behind it. Serve `dist/` at the path you built it for.
 src/
   types.ts              the shape of a session, its settings and its rounds
   lib/
-    scoring.ts          totals, standings, end conditions, bids, pot, dealer
+    scoring.ts          totals, standings, end conditions, bids, trick tables, pot, dealer
     session.ts          creating, mutating and migrating a session
     deal.ts             hand sizes round by round, and how many rounds
     blinds.ts           the blinds ladder and the wall-clock countdown

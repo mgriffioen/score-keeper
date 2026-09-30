@@ -16,6 +16,7 @@ const base: Omit<GameSettings, 'notes'> = {
     missed: 'nothing',
     penaltyPerTrick: 10,
   },
+  trickTable: { enabled: false, bands: [], tricksPerHand: 0, bonus: false },
   deal: { pattern: 'fixed', maxCards: 10 },
   blinds: { enabled: false, levels: [], alert: true },
 };
@@ -38,6 +39,7 @@ function preset(
       endCondition: { ...base.endCondition, ...overrides.endCondition },
       stakes: { ...base.stakes, ...overrides.stakes },
       bidScoring: { ...base.bidScoring, ...overrides.bidScoring },
+      trickTable: { ...base.trickTable, ...overrides.trickTable },
       deal: { ...base.deal, ...overrides.deal },
       blinds: { ...base.blinds, ...overrides.blinds },
     },
@@ -142,6 +144,36 @@ export const PRESETS: GamePreset[] = [
       },
     },
     { dealFor: dealFromDeck(60, 'up') },
+  ),
+
+  preset(
+    'fox-in-the-forest',
+    'The Fox in the Forest',
+    'Two-player tricks: win a few or win most, never too many. First to 21.',
+    {
+      direction: 'high',
+      roundLabel: 'Round',
+      trackDealer: true,
+      allowNegative: false,
+      endCondition: { type: 'target', rounds: 10, target: 21, comparison: 'atLeast' },
+      // The rulebook's table: humble 0–3 and victorious 7–9 both pay 6, the
+      // defeated middle pays 1 to 3, and greedy 10–13 pays nothing. Each 7
+      // (the Treasure) in a trick you win is a point on top.
+      trickTable: {
+        enabled: true,
+        tricksPerHand: 13,
+        bonus: true,
+        bands: [
+          { min: 0, max: 3, points: 6 },
+          { min: 4, max: 4, points: 1 },
+          { min: 5, max: 5, points: 2 },
+          { min: 6, max: 6, points: 3 },
+          { min: 7, max: 9, points: 6 },
+          { min: 10, max: 13, points: 0 },
+        ],
+      },
+    },
+    { suggestedPlayers: 2 },
   ),
 
   preset('golf', 'Golf', 'Nine holes, lowest total takes it.', {

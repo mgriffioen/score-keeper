@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PRESETS, findPreset } from './presets';
-import { bidRoundScore } from './scoring';
+import { bidRoundScore, scoresFromTrickTable, trickTableScore } from './scoring';
 import { settingsFromPreset } from './session';
 
 describe('presets', () => {
@@ -73,5 +73,51 @@ describe('Wizard scoring', () => {
     expect(bidRoundScore(2, 2, rules)).toBe(40);
     expect(bidRoundScore(2, 0, rules)).toBe(-20);
     expect(bidRoundScore(0, 2, rules)).toBe(-20);
+  });
+});
+
+describe('The Fox in the Forest scoring, against the rulebook', () => {
+  const fox = findPreset('fox-in-the-forest');
+  const rules = fox.settings.trickTable;
+
+  it('is a two-player race to 21, highest wins, with no bidding', () => {
+    expect(fox.suggestedPlayers).toBe(2);
+    expect(fox.settings.direction).toBe('high');
+    expect(fox.settings.endCondition).toMatchObject({ type: 'target', target: 21, comparison: 'atLeast' });
+    expect(fox.settings.bidScoring.enabled).toBe(false);
+    expect(rules.enabled).toBe(true);
+    expect(rules.tricksPerHand).toBe(13);
+  });
+
+  it('pays every trick count from 0 to 13 per the table', () => {
+    const expected = [6, 6, 6, 6, 1, 2, 3, 6, 6, 6, 0, 0, 0, 0];
+    expected.forEach((points, tricks) => {
+      expect(trickTableScore(tricks, null, rules), `${tricks} tricks`).toBe(points);
+    });
+  });
+
+  it('adds a point per treasure on top of the table', () => {
+    expect(trickTableScore(8, 2, rules)).toBe(8);
+    // Greedy still keeps the treasure.
+    expect(trickTableScore(11, 1, rules)).toBe(1);
+  });
+
+  it('scores nothing until the tricks are in', () => {
+    expect(trickTableScore(null, 2, rules)).toBeNull();
+  });
+
+  it('scores a whole round, 9 tricks to 4', () => {
+    const players = [
+      { id: 'a', name: 'Ana' },
+      { id: 'b', name: 'Bo' },
+    ];
+    expect(scoresFromTrickTable(players, { a: 9, b: 4 }, { a: 1, b: null }, rules)).toEqual({
+      a: 7,
+      b: 1,
+    });
+  });
+
+  it('ignores the bonus when the table has the bonus column switched off', () => {
+    expect(trickTableScore(2, 3, { ...rules, bonus: false })).toBe(6);
   });
 });
