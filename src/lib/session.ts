@@ -46,12 +46,12 @@ function cloneTrickTable(table: TrickTable): TrickTable {
   return { ...table, bands: (table.bands ?? []).map((band) => ({ ...band })) };
 }
 
-/** "Rummy — Sep 7" style, so the history list is scannable without typing. */
+/** "Rummy: Sep 7" style, so the history list is scannable without typing. */
 export function suggestName(presetId: string, at = new Date()): string {
   const preset = findPreset(presetId);
   const stem = preset.id === 'custom' ? 'Game night' : preset.name;
   const when = at.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  return `${stem} — ${when}`;
+  return `${stem}: ${when}`;
 }
 
 export function createSession(input: {

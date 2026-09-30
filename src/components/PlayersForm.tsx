@@ -175,6 +175,14 @@ export function PlayersForm(props: {
               autoCorrect="off"
               spellCheck={false}
               onChange={(event) => rename(player.id, event.target.value)}
+              // A stock "Player 3" is a stand-in, not a name: clear it on the
+              // way in so typing replaces it, and put it back if left empty.
+              onFocus={() => {
+                if (isStandInName(player.name)) rename(player.id, '');
+              }}
+              onBlur={() => {
+                if (player.name.trim() === '') rename(player.id, `Player ${index + 1}`);
+              }}
             />
             <button
               type="button"
@@ -204,4 +212,8 @@ export function PlayersForm(props: {
       </div>
     </section>
   );
+}
+
+function isStandInName(name: string): boolean {
+  return /^Player \d+$/.test(name);
 }
